@@ -83,6 +83,12 @@ def draft_explorer_tab():
     class_df = class_df.copy()
     class_df["actual_trend"] = class_df["point_shares"].rolling(window=7, center=True, min_periods=1).mean()
 
+    # Pace, not just the raw total: a non-mature player's career is still in progress,
+    # so their cumulative Point Shares understates them relative to the curve (which is
+    # calibrated on ~15-20 season careers). Point Shares per 82 games played puts a
+    # 7-season career on the same footing as a full one for comparison purposes.
+    class_df["pace"] = class_df["point_shares"] / class_df["games_played"].clip(lower=1) * 82
+
     max_pick = int(class_df["overall_pick"].max())
     chunk_size = 20
     chunk_bounds = [(start, min(start + chunk_size - 1, max_pick)) for start in range(1, max_pick + 1, chunk_size)]
@@ -105,7 +111,8 @@ def draft_explorer_tab():
     ))
     fig.add_trace(go.Scatter(
         x=page_df["overall_pick"], y=page_df["point_shares"], mode="markers", name="Actual outcome",
-        text=page_df["player"], hovertemplate="%{text}<br>Pick %{x}<br>Point Shares %{y:.1f}<extra></extra>",
+        text=page_df["player"], customdata=page_df["pace"],
+        hovertemplate="%{text}<br>Pick %{x}<br>Career Point Shares %{y:.1f}<br>Pace: %{customdata:.1f} PS/82GP<extra></extra>",
         marker=dict(
             color="#4e79a7" if is_mature else "#bab0ac",
             size=9,
@@ -121,10 +128,34 @@ def draft_explorer_tab():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    table = page_df[["overall_pick", "player", "position", "point_shares", "is_mature"]].rename(
-        columns={"overall_pick": "Pick", "player": "Player", "position": "Pos", "point_shares": "Career PS", "is_mature": "Mature"}
+    table = page_df[["overall_pick", "player", "position", "point_shares", "pace", "is_mature"]].rename(
+        columns={
+            "overall_pick": "Pick", "player": "Player", "position": "Pos",
+            "point_shares": "Career PS", "pace": "Pace (PS/82GP)", "is_mature": "Mature",
+        }
     )
-    st.dataframe(table, use_container_width=True, hide_index=True)
+    st.dataframe(table.round({"Pace (PS/82GP)": 1}), use_container_width=True, hide_index=True)
+    if not is_mature:
+        st.caption(
+            "Pace (PS/82GP) rescales a still-active player's career total to a per-82-games rate, "
+            "so a young star's incomplete career can be compared fairly to a full one - see the "
+            "expander below for why this matters."
+        )
+
+    with st.expander("Why can a legendary player look like he's \"underperforming\" the pick curve?"):
+        st.markdown(
+            "The pick curve is trained only on **mature** classes (2000-2012) - players with "
+            "15-20+ complete seasons by the time this dataset was built, so it represents "
+            "*full-career* totals. A player from a non-mature class is compared against that "
+            "curve using only however much career he's played so far, which understates him.\n\n"
+            "**Connor McDavid** (2015, pick #1) is the clearest example: his 82.4 career Point "
+            "Shares cover only 487 games (about 6 82-game seasons), landing well below the "
+            "curve's ~103 full-career expectation for pick #1. But his **pace** is "
+            "82.4 / 487 games x 82 = **13.9 Point Shares per 82 games** - more than double the "
+            "~6.1 PS/82GP that a 1st-overall pick would need to sustain over a ~17-season career "
+            "to reach that 103 total. He isn't underperforming the pick; he just hasn't played "
+            "enough games yet for the totals to reflect it."
+        )
 
     with st.expander("Why did the fancier model lose to a straight-line baseline?"):
         st.markdown(
