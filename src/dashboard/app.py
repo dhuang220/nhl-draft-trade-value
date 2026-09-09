@@ -8,6 +8,7 @@ or a hypothetical trade built from live player names.
 """
 
 import sys
+from datetime import date
 from pathlib import Path
 
 # `streamlit run src/dashboard/app.py` puts this file's own directory on
@@ -22,7 +23,7 @@ import streamlit as st
 
 from src.etl.fetch_current_stats import fetch_all_current_players
 from src.features.draft_features import clean_draft_data
-from src.trade.trade_grader import TradeGrader, TradeSideGrade
+from src.trade.trade_grader import HypotheticalPick, TradeGrader, TradeSideGrade
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
@@ -270,6 +271,33 @@ def historical_trade_mode():
     _render_grade_comparison(grades)
 
 
+def _pick_builder(side_key: str) -> list[HypotheticalPick]:
+    picks_key = f"{side_key}_picks"
+    st.session_state.setdefault(picks_key, [])
+
+    with st.expander("Add a draft pick"):
+        year_col, round_col, cond_col = st.columns(3)
+        year = year_col.number_input(
+            "Year", min_value=date.today().year, max_value=date.today().year + 7,
+            value=date.today().year + 1, key=f"{side_key}_pick_year",
+        )
+        pick_round = round_col.selectbox("Round", list(range(1, 8)), key=f"{side_key}_pick_round")
+        conditional = cond_col.checkbox("Conditional", key=f"{side_key}_pick_conditional")
+        if st.button("Add pick", key=f"{side_key}_add_pick"):
+            st.session_state[picks_key].append(HypotheticalPick(year=int(year), round=pick_round, conditional=conditional))
+            st.rerun()
+
+    for i, pick in enumerate(st.session_state[picks_key]):
+        label = f"{pick.year} round {pick.round} pick" + (" (conditional)" if pick.conditional else "")
+        text_col, remove_col = st.columns([4, 1])
+        text_col.write(f"- {label}")
+        if remove_col.button("Remove", key=f"{side_key}_remove_pick_{i}"):
+            st.session_state[picks_key].pop(i)
+            st.rerun()
+
+    return st.session_state[picks_key]
+
+
 def hypothetical_trade_mode():
     grader = load_trade_grader()
 
@@ -278,19 +306,27 @@ def hypothetical_trade_mode():
 
     col_a, col_b = st.columns(2)
     with col_a:
-        side_a = st.multiselect("Side A players", player_names, key="side_a_players")
+        st.markdown("**Side A**")
+        side_a_players = st.multiselect("Players", player_names, key="side_a_players")
+        side_a_picks = _pick_builder("side_a")
     with col_b:
-        side_b = st.multiselect("Side B players", player_names, key="side_b_players")
+        st.markdown("**Side B**")
+        side_b_players = st.multiselect("Players", player_names, key="side_b_players")
+        side_b_picks = _pick_builder("side_b")
+
+    side_a = [*side_a_players, *side_a_picks]
+    side_b = [*side_b_players, *side_b_picks]
 
     if st.button("Grade trade", disabled=not (side_a and side_b)):
         with st.spinner("Fetching live stats and grading..."):
             grades = grader.grade_hypothetical_trade(side_a, side_b)
         _render_grade_comparison(grades)
         st.caption(
-            "Every name above is a real current roster player, but the live-stats lookup uses a "
-            "separate NHL API that occasionally formats a name differently (suffixes, accents) - "
-            "on the rare mismatch, that player falls back to career draft Point Shares instead of "
-            "live stats, and shows up as unvalued only if that also fails."
+            "Every player name above is a real current roster player, but the live-stats lookup uses "
+            "a separate NHL API that occasionally formats a name differently (suffixes, accents) - on "
+            "the rare mismatch, that player falls back to career draft Point Shares instead of live "
+            "stats, and shows up as unvalued only if that also fails. Picks use the same future-year "
+            "and conditional discounting as historical trades."
         )
 
 

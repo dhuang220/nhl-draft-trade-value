@@ -20,6 +20,7 @@ reported separately rather than silently treated as zero - zero would say
 """
 
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 
 import joblib
@@ -42,6 +43,16 @@ class AssetValue:
     value: float | None
     confidence: str  # "high" | "medium" | "low" | "none"
     source: str
+
+
+@dataclass
+class HypotheticalPick:
+    """A future draft pick in a hypothetical trade - overall slot is never known
+    yet, so value_pick() always falls back to the median-by-round estimate."""
+
+    year: int
+    round: int
+    conditional: bool = False
 
 
 @dataclass
@@ -182,12 +193,23 @@ class TradeGrader:
 
         return grades
 
-    def grade_hypothetical_trade(self, side_a_players: list[str], side_b_players: list[str]) -> dict[str, TradeSideGrade]:
+    def grade_hypothetical_trade(
+        self,
+        side_a: list[str | HypotheticalPick],
+        side_b: list[str | HypotheticalPick],
+        trade_year: int | None = None,
+    ) -> dict[str, TradeSideGrade]:
+        trade_year = trade_year or date.today().year
         grades = {}
-        for label, players in [("side_a", side_a_players), ("side_b", side_b_players)]:
+        for label, assets in [("side_a", side_a), ("side_b", side_b)]:
             grade = TradeSideGrade(team=label)
-            for name in players:
-                grade.assets.append(self.value_player_live(name))
+            for asset in assets:
+                if isinstance(asset, HypotheticalPick):
+                    grade.assets.append(
+                        self.value_pick(asset.year, asset.round, None, asset.conditional, trade_year)
+                    )
+                else:
+                    grade.assets.append(self.value_player_live(asset))
             grades[label] = grade
         return grades
 
