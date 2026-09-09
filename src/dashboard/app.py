@@ -271,15 +271,15 @@ def historical_trade_mode():
     _render_grade_comparison(grades)
 
 
-def _pick_builder(side_key: str) -> list[HypotheticalPick]:
+def _pick_builder(side_key: str, trade_year: int) -> list[HypotheticalPick]:
     picks_key = f"{side_key}_picks"
     st.session_state.setdefault(picks_key, [])
 
     with st.expander("Add a draft pick"):
         year_col, round_col, cond_col = st.columns(3)
         year = year_col.number_input(
-            "Year", min_value=date.today().year, max_value=date.today().year + 7,
-            value=date.today().year + 1, key=f"{side_key}_pick_year",
+            "Year", min_value=trade_year, max_value=trade_year + 7,
+            value=trade_year + 1, key=f"{side_key}_pick_year",
         )
         pick_round = round_col.selectbox("Round", list(range(1, 8)), key=f"{side_key}_pick_round")
         conditional = cond_col.checkbox("Conditional", key=f"{side_key}_pick_conditional")
@@ -304,29 +304,37 @@ def hypothetical_trade_mode():
     with st.spinner("Loading current rosters..."):
         player_names = load_current_player_names()
 
+    trade_year = st.number_input(
+        "Trade year", min_value=date.today().year, max_value=date.today().year + 3,
+        value=date.today().year, key="hypothetical_trade_year",
+        help="Only affects pick discounting (further-out picks are worth less). Player values always "
+        "use each player's current real stats - there's no way to fetch a player's stats for a season "
+        "that hasn't happened yet.",
+    )
+
     col_a, col_b = st.columns(2)
     with col_a:
         st.markdown("**Side A**")
         side_a_players = st.multiselect("Players", player_names, key="side_a_players")
-        side_a_picks = _pick_builder("side_a")
+        side_a_picks = _pick_builder("side_a", trade_year)
     with col_b:
         st.markdown("**Side B**")
         side_b_players = st.multiselect("Players", player_names, key="side_b_players")
-        side_b_picks = _pick_builder("side_b")
+        side_b_picks = _pick_builder("side_b", trade_year)
 
     side_a = [*side_a_players, *side_a_picks]
     side_b = [*side_b_players, *side_b_picks]
 
     if st.button("Grade trade", disabled=not (side_a and side_b)):
         with st.spinner("Fetching live stats and grading..."):
-            grades = grader.grade_hypothetical_trade(side_a, side_b)
+            grades = grader.grade_hypothetical_trade(side_a, side_b, trade_year=trade_year)
         _render_grade_comparison(grades)
         st.caption(
             "Every player name above is a real current roster player, but the live-stats lookup uses "
             "a separate NHL API that occasionally formats a name differently (suffixes, accents) - on "
             "the rare mismatch, that player falls back to career draft Point Shares instead of live "
-            "stats, and shows up as unvalued only if that also fails. Picks use the same future-year "
-            "and conditional discounting as historical trades."
+            "stats, and shows up as unvalued only if that also fails. Picks are discounted for how "
+            "far out they are from the trade year above, and for being conditional."
         )
 
 
