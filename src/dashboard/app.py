@@ -41,6 +41,11 @@ def load_pick_curve():
     return joblib.load(PROCESSED_DIR / "pick_value_curve.joblib")
 
 
+@st.cache_resource
+def load_games_played_curve():
+    return joblib.load(PROCESSED_DIR / "games_played_curve.joblib")
+
+
 TRADE_GRADER_YEAR_RANGE = (2000, 2026)
 
 
@@ -60,6 +65,7 @@ def load_trade_grader() -> TradeGrader:
 def draft_explorer_tab():
     draft = load_draft_data()
     curve = load_pick_curve()
+    games_curve = load_games_played_curve()
 
     year = st.selectbox("Draft year", sorted(draft["year"].unique(), reverse=True))
     class_df = draft[draft["year"] == year].sort_values("overall_pick")
@@ -89,6 +95,14 @@ def draft_explorer_tab():
     # 7-season career on the same footing as a full one for comparison purposes.
     class_df["pace"] = class_df["point_shares"] / class_df["games_played"].clip(lower=1) * 82
 
+    # Projected career value: pace held constant over a REALISTIC assumed career
+    # length for this pick slot (from games_played_curve, fit on mature careers at
+    # the same slot) rather than the player's own incomplete games total. This is
+    # what actually puts a still-active player on the same footing as the curve -
+    # comparing his raw (unfinished) total to a full-career curve never can.
+    benchmark_games = games_curve.predict(class_df["overall_pick"])
+    class_df["projected_value"] = class_df["pace"] * benchmark_games / 82
+
     max_pick = int(class_df["overall_pick"].max())
     chunk_size = 20
     chunk_bounds = [(start, min(start + chunk_size - 1, max_pick)) for start in range(1, max_pick + 1, chunk_size)]
@@ -110,15 +124,23 @@ def draft_explorer_tab():
         line=dict(color="#59a14f", width=2, dash="dot"),
     ))
     fig.add_trace(go.Scatter(
-        x=page_df["overall_pick"], y=page_df["point_shares"], mode="markers", name="Actual outcome",
+        x=page_df["overall_pick"], y=page_df["point_shares"], mode="markers", name="Actual outcome (so far)",
         text=page_df["player"], customdata=page_df["pace"],
-        hovertemplate="%{text}<br>Pick %{x}<br>Career Point Shares %{y:.1f}<br>Pace: %{customdata:.1f} PS/82GP<extra></extra>",
+        hovertemplate="%{text}<br>Pick %{x}<br>Career Point Shares so far: %{y:.1f}<br>Pace: %{customdata:.1f} PS/82GP<extra></extra>",
         marker=dict(
             color="#4e79a7" if is_mature else "#bab0ac",
             size=9,
             line=dict(width=1, color="rgba(0,0,0,0.3)"),
         ),
     ))
+    if not is_mature:
+        fig.add_trace(go.Scatter(
+            x=page_df["overall_pick"], y=page_df["projected_value"], mode="markers",
+            name="Projected career value (at current pace)",
+            text=page_df["player"],
+            hovertemplate="%{text}<br>Pick %{x}<br>Projected career Point Shares: %{y:.1f}<extra></extra>",
+            marker=dict(color="#b07aa1", size=11, symbol="diamond", line=dict(width=1, color="rgba(0,0,0,0.3)")),
+        ))
     fig.update_layout(
         title=f"{year} draft class: actual outcome vs. expected pick value ({chunk_labels[chosen_bounds]})",
         xaxis_title="Overall pick", yaxis_title="Career Point Shares",
@@ -128,18 +150,25 @@ def draft_explorer_tab():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    table = page_df[["overall_pick", "player", "position", "point_shares", "pace", "is_mature"]].rename(
-        columns={
-            "overall_pick": "Pick", "player": "Player", "position": "Pos",
-            "point_shares": "Career PS", "pace": "Pace (PS/82GP)", "is_mature": "Mature",
-        }
-    )
-    st.dataframe(table.round({"Pace (PS/82GP)": 1}), use_container_width=True, hide_index=True)
+    table_cols = ["overall_pick", "player", "position", "point_shares", "pace"]
+    rename_map = {
+        "overall_pick": "Pick", "player": "Player", "position": "Pos",
+        "point_shares": "Career PS so far", "pace": "Pace (PS/82GP)",
+    }
+    if not is_mature:
+        table_cols.append("projected_value")
+        rename_map["projected_value"] = "Projected career PS"
+    table_cols.append("is_mature")
+    rename_map["is_mature"] = "Mature"
+
+    table = page_df[table_cols].rename(columns=rename_map)
+    round_cols = {"Pace (PS/82GP)": 1, **({"Projected career PS": 1} if not is_mature else {})}
+    st.dataframe(table.round(round_cols), use_container_width=True, hide_index=True)
     if not is_mature:
         st.caption(
-            "Pace (PS/82GP) rescales a still-active player's career total to a per-82-games rate, "
-            "so a young star's incomplete career can be compared fairly to a full one - see the "
-            "expander below for why this matters."
+            "The purple diamonds (and 'Projected career PS' column) show what each player's career "
+            "total would be if their current pace continued for a realistic full career at their "
+            "draft slot - the fair comparison against the red curve. See the expander below for why."
         )
 
     with st.expander("Why can a legendary player look like he's \"underperforming\" the pick curve?"):
@@ -150,11 +179,14 @@ def draft_explorer_tab():
             "curve using only however much career he's played so far, which understates him.\n\n"
             "**Connor McDavid** (2015, pick #1) is the clearest example: his 82.4 career Point "
             "Shares cover only 487 games (about 6 82-game seasons), landing well below the "
-            "curve's ~103 full-career expectation for pick #1. But his **pace** is "
-            "82.4 / 487 games x 82 = **13.9 Point Shares per 82 games** - more than double the "
-            "~6.1 PS/82GP that a 1st-overall pick would need to sustain over a ~17-season career "
-            "to reach that 103 total. He isn't underperforming the pick; he just hasn't played "
-            "enough games yet for the totals to reflect it."
+            "curve's ~103 full-career expectation for pick #1 - that's the grey dot sitting "
+            "below the red line.\n\n"
+            "His **pace** is 82.4 / 487 games x 82 = **13.9 Point Shares per 82 games**. Pick #1 "
+            "picks who complete a full career play about 887 games on average - so at his current "
+            "pace over a realistic career length, McDavid projects to 13.9 x 887 / 82 = **~150 "
+            "career Point Shares**, well *above* the curve's 103 expectation. That's the purple "
+            "diamond: the same player, same pace, just given a fair career length to work with "
+            "instead of his still-in-progress raw total."
         )
 
     with st.expander("Why did the fancier model lose to a straight-line baseline?"):
