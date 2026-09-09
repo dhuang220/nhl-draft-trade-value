@@ -1,0 +1,74 @@
+import pandas as pd
+
+from src.features.draft_features import MATURE_CUTOFF_YEAR, build_feature_matrix, clean_draft_data
+
+
+def _row(**overrides):
+    row = {
+        "year": 2005,
+        "overall_pick": 10,
+        "age": 18,
+        "position": "C",
+        "games_played": 100,
+        "point_shares": 5.0,
+    }
+    row.update(overrides)
+    return row
+
+
+def test_point_shares_nan_for_never_played_becomes_zero_not_dropped():
+    df = pd.DataFrame(
+        [
+            _row(games_played=float("nan"), point_shares=float("nan")),
+            _row(games_played=200, point_shares=12.0),
+        ]
+    )
+    out = clean_draft_data(df)
+
+    assert len(out) == 2
+    assert out.loc[0, "point_shares"] == 0.0
+    assert out.loc[0, "games_played"] == 0.0
+    assert out.loc[1, "point_shares"] == 12.0
+
+
+def test_is_mature_flag_exact_cutoff_boundary():
+    df = pd.DataFrame(
+        [
+            _row(year=MATURE_CUTOFF_YEAR - 1),
+            _row(year=MATURE_CUTOFF_YEAR),
+            _row(year=MATURE_CUTOFF_YEAR + 1),
+        ]
+    )
+    out = clean_draft_data(df)
+    assert out.loc[0, "is_mature"] == True
+    assert out.loc[1, "is_mature"] == True
+    assert out.loc[2, "is_mature"] == False
+
+
+def test_position_group_is_goalie_only_for_g_others_are_skater():
+    df = pd.DataFrame(
+        [
+            _row(position="C"),
+            _row(position="D"),
+            _row(position="G"),
+        ]
+    )
+    out = clean_draft_data(df)
+    assert out.loc[0, "position_group"] == "Skater"
+    assert out.loc[1, "position_group"] == "Skater"
+    assert out.loc[2, "position_group"] == "G"
+
+
+def test_build_feature_matrix_one_hot_encodes_position_group_with_drop_first():
+    df = pd.DataFrame([_row(position="C"), _row(position="G")])
+    clean = clean_draft_data(df)
+    matrix = build_feature_matrix(clean)
+
+    assert "position_group" not in matrix.columns
+    assert "overall_pick" in matrix.columns
+    assert "age" in matrix.columns
+    # drop_first=True over {"G", "Skater"} keeps only one dummy column
+    dummy_cols = [c for c in matrix.columns if c.startswith("position_group_")]
+    assert len(dummy_cols) == 1
+    assert dummy_cols[0] == "position_group_Skater"
+    assert list(matrix[dummy_cols[0]]) == [True, False]
