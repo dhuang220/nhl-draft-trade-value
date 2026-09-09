@@ -73,16 +73,39 @@ def draft_explorer_tab():
             "so low Point Shares here may just mean \"too soon to tell,\" not \"bad pick.\" Excluded from model training."
         )
 
+    # A rolling mean over THIS class's actual outcomes, not another isotonic fit -
+    # a single class has exactly one player per pick number, so there's nothing to
+    # average across at a given pick, and forcing monotonicity here would hide the
+    # real (and often noisy - a bust at pick 8, a steal at pick 40) shape of one
+    # specific draft class, which is a different, more honest story than the
+    # long-run expected curve. Computed over the full class before pagination so a
+    # page boundary doesn't distort the smoothing at its edges.
+    class_df = class_df.copy()
+    class_df["actual_trend"] = class_df["point_shares"].rolling(window=7, center=True, min_periods=1).mean()
+
+    max_pick = int(class_df["overall_pick"].max())
+    chunk_size = 20
+    chunk_bounds = [(start, min(start + chunk_size - 1, max_pick)) for start in range(1, max_pick + 1, chunk_size)]
+    chunk_labels = {bounds: f"Picks {bounds[0]}-{bounds[1]}" for bounds in chunk_bounds}
+    chosen_bounds = st.selectbox("Pick range", chunk_bounds, format_func=lambda b: chunk_labels[b])
+    lo, hi = chosen_bounds
+
+    page_df = class_df[class_df["overall_pick"].between(lo, hi)]
+
     fig = go.Figure()
-    pick_range = list(range(1, int(class_df["overall_pick"].max()) + 1))
+    pick_range = list(range(lo, hi + 1))
     curve_values = curve.predict(pick_range)
     fig.add_trace(go.Scatter(
         x=pick_range, y=curve_values, mode="lines", name="Expected value (pick curve)",
         line=dict(color="#e15759", width=3),
     ))
     fig.add_trace(go.Scatter(
-        x=class_df["overall_pick"], y=class_df["point_shares"], mode="markers", name="Actual outcome",
-        text=class_df["player"], hovertemplate="%{text}<br>Pick %{x}<br>Point Shares %{y:.1f}<extra></extra>",
+        x=page_df["overall_pick"], y=page_df["actual_trend"], mode="lines", name="This class's actual trend",
+        line=dict(color="#59a14f", width=2, dash="dot"),
+    ))
+    fig.add_trace(go.Scatter(
+        x=page_df["overall_pick"], y=page_df["point_shares"], mode="markers", name="Actual outcome",
+        text=page_df["player"], hovertemplate="%{text}<br>Pick %{x}<br>Point Shares %{y:.1f}<extra></extra>",
         marker=dict(
             color="#4e79a7" if is_mature else "#bab0ac",
             size=9,
@@ -90,7 +113,7 @@ def draft_explorer_tab():
         ),
     ))
     fig.update_layout(
-        title=f"{year} draft class: actual outcome vs. expected pick value",
+        title=f"{year} draft class: actual outcome vs. expected pick value ({chunk_labels[chosen_bounds]})",
         xaxis_title="Overall pick", yaxis_title="Career Point Shares",
         template="plotly_white",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
@@ -98,7 +121,7 @@ def draft_explorer_tab():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    table = class_df[["overall_pick", "player", "position", "point_shares", "is_mature"]].rename(
+    table = page_df[["overall_pick", "player", "position", "point_shares", "is_mature"]].rename(
         columns={"overall_pick": "Pick", "player": "Player", "position": "Pos", "point_shares": "Career PS", "is_mature": "Mature"}
     )
     st.dataframe(table, use_container_width=True, hide_index=True)
