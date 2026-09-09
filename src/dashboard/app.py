@@ -7,7 +7,13 @@ Trade Grader wraps TradeGrader to grade a historical trade from trades_clean.csv
 or a hypothetical trade built from live player names.
 """
 
+import sys
 from pathlib import Path
+
+# `streamlit run src/dashboard/app.py` puts this file's own directory on
+# sys.path, not the repo root - so `import src....` fails unless the root is
+# added explicitly first (bites locally too, not just on Streamlit Cloud).
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import joblib
 import pandas as pd
