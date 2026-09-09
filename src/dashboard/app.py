@@ -20,6 +20,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from src.etl.fetch_current_stats import fetch_all_current_players
 from src.features.draft_features import clean_draft_data
 from src.trade.trade_grader import TradeGrader, TradeSideGrade
 
@@ -60,6 +61,11 @@ def load_trades() -> pd.DataFrame:
 @st.cache_resource
 def load_trade_grader() -> TradeGrader:
     return TradeGrader()
+
+
+@st.cache_data(ttl=3600)
+def load_current_player_names() -> list[str]:
+    return fetch_all_current_players()
 
 
 def draft_explorer_tab():
@@ -267,22 +273,24 @@ def historical_trade_mode():
 def hypothetical_trade_mode():
     grader = load_trade_grader()
 
+    with st.spinner("Loading current rosters..."):
+        player_names = load_current_player_names()
+
     col_a, col_b = st.columns(2)
     with col_a:
-        side_a_text = st.text_area("Side A players (one per line)", placeholder="Connor McDavid\nEvan Bouchard")
+        side_a = st.multiselect("Side A players", player_names, key="side_a_players")
     with col_b:
-        side_b_text = st.text_area("Side B players (one per line)", placeholder="Auston Matthews")
-
-    side_a = [n.strip() for n in side_a_text.splitlines() if n.strip()]
-    side_b = [n.strip() for n in side_b_text.splitlines() if n.strip()]
+        side_b = st.multiselect("Side B players", player_names, key="side_b_players")
 
     if st.button("Grade trade", disabled=not (side_a and side_b)):
         with st.spinner("Fetching live stats and grading..."):
             grades = grader.grade_hypothetical_trade(side_a, side_b)
         _render_grade_comparison(grades)
         st.caption(
-            "Names that don't resolve to an exact live NHL player fall back to career draft Point "
-            "Shares, and if that also fails they show up as unvalued rather than silently dropped."
+            "Every name above is a real current roster player, but the live-stats lookup uses a "
+            "separate NHL API that occasionally formats a name differently (suffixes, accents) - "
+            "on the rare mismatch, that player falls back to career draft Point Shares instead of "
+            "live stats, and shows up as unvalued only if that also fails."
         )
 
 

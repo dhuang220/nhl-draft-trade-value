@@ -7,11 +7,15 @@ and xGA always come back None here. Callers should impute those (e.g. with the t
 median, same as clean_value_training_data does) rather than treat None as zero.
 """
 
+import time
+
 import requests
 
 SEARCH_URL = "https://search.d3.nhle.com/api/v1/search/player"
 LANDING_URL = "https://api-web.nhle.com/v1/player/{player_id}/landing"
 REALTIME_URL = "https://api.nhle.com/stats/rest/en/skater/realtime"
+STANDINGS_URL = "https://api-web.nhle.com/v1/standings/now"
+ROSTER_URL = "https://api-web.nhle.com/v1/roster/{team_abbrev}/current"
 
 
 class PlayerNotFoundError(Exception):
@@ -113,6 +117,35 @@ def fetch_current_player_stats(player_name: str) -> dict:
             stats["iBLK"] = rt.get("blockedShots")
 
     return stats
+
+
+def _get_json(url: str, retries: int = 3, delay: float = 0.5) -> dict:
+    """32 back-to-back team-roster requests trips the NHL API's rate limiting (a 429
+    with an HTML challenge page, not JSON) - a small delay plus backoff on 429 keeps
+    fetch_all_current_players() reliable without needing to slow every other call
+    in this module that only ever makes one or two requests at a time."""
+    for attempt in range(retries):
+        resp = requests.get(url, timeout=10)
+        if resp.status_code == 429:
+            time.sleep(delay * (2**attempt))
+            continue
+        resp.raise_for_status()
+        return resp.json()
+    resp.raise_for_status()
+
+
+def fetch_all_current_players() -> list[str]:
+    """Every player on a current NHL roster, for populating a search/select input that can
+    only produce valid names (rather than free text a user could mistype)."""
+    teams = sorted({t["teamAbbrev"]["default"] for t in _get_json(STANDINGS_URL)["standings"]})
+
+    names = []
+    for team in teams:
+        roster = _get_json(ROSTER_URL.format(team_abbrev=team))
+        for player in roster["forwards"] + roster["defensemen"] + roster["goalies"]:
+            names.append(f"{player['firstName']['default']} {player['lastName']['default']}")
+        time.sleep(0.3)
+    return sorted(set(names))
 
 
 if __name__ == "__main__":
