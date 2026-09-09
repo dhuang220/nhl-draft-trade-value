@@ -41,9 +41,15 @@ def load_pick_curve():
     return joblib.load(PROCESSED_DIR / "pick_value_curve.joblib")
 
 
+TRADE_GRADER_YEAR_RANGE = (2000, 2026)
+
+
 @st.cache_data
 def load_trades() -> pd.DataFrame:
-    return pd.read_csv(PROCESSED_DIR / "trades_clean.csv")
+    trades = pd.read_csv(PROCESSED_DIR / "trades_clean.csv")
+    season_start_year = trades["season"].str.slice(0, 4).astype(int)
+    lo, hi = TRADE_GRADER_YEAR_RANGE
+    return trades[season_start_year.between(lo, hi)]
 
 
 @st.cache_resource
