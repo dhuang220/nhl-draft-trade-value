@@ -4,8 +4,11 @@ __pycache__/
 venv/
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/draft_history_raw.csv
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/*.csv
+!data/processed/*.joblib
 *.sqlite
 *.db
 .DS_Store
