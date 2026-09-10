@@ -3,12 +3,21 @@
 Every asset is valued through one of four paths, in order of confidence:
 1. Season-matched player value - the trade happened in 2016-17, so we have the
    real composite value model output for that player that season, computed
-   locally with no network call. High confidence.
+   locally with no network call. High confidence. NOTE: unlike paths 2 and 3,
+   this is a single-SEASON total, not a career projection (the precomputed
+   table has no draft slot to project from without a fragile extra join) - a
+   known, documented scale inconsistency with the rest of this file.
 2. Season-specific live value - any other historical trade, or a hypothetical/
    future one. That player's actual stats for the relevant season (or their
    current season, for a hypothetical trade) are pulled from the NHL API and
-   run through the same trained value model. Medium confidence (missing
-   possession/xG inputs are imputed with the training median).
+   run through the same trained value model, then PROJECTED to a career total
+   using the same games-played-by-draft-slot curve Draft Explorer uses for its
+   pace projections - matching the timescale of a pick's expected career value
+   (value_pick), rather than comparing one season of a player against an
+   entire career of draft-slot expectation. Medium confidence (missing
+   possession/xG inputs are imputed with the training median; undrafted
+   players get whatever the curve's lowest-pick estimate is, which likely
+   understates them).
 3. Career draft-value fallback - the season-specific lookup found no NHL
    record for that player in that season (too old for the league's digitized
    records, a name that doesn't resolve, etc.). Falls back to the player's
@@ -126,6 +135,10 @@ class TradeGrader:
 
         self._pick_curve = joblib.load(PROCESSED_DIR / "pick_value_curve.joblib")
         self._value_model = joblib.load(PROCESSED_DIR / "value_model.joblib")
+        # Same curve Draft Explorer uses to turn a still-active prospect's pace into a
+        # career-scale projection - reused here so a live/season player value is on the
+        # same career-length scale as a pick's expected value (see _value_from_stats).
+        self._games_played_curve = joblib.load(PROCESSED_DIR / "games_played_curve.joblib")
         self._feature_medians = self._season_values_feature_medians()
 
         draft_by_year = draft[draft["year"].between(2000, 2020)]
@@ -178,9 +191,19 @@ class TradeGrader:
 
         X = pd.DataFrame([row])[FEATURE_COLUMNS]
         predicted_rate = self._value_model.predict(X)[0]
-        return AssetValue(
-            name, float(predicted_rate * stats["GP"]), "medium", source, image_url=stats.get("headshot"),
-        )
+
+        # Project this one season's rate over a realistic FULL career, rather than
+        # returning a single-season total - a pick's value (from value_pick) is already
+        # an expected CAREER total, and comparing a season number against a career number
+        # would silently make picks look weak against even an average current player
+        # (one great season otherwise reads as "worth more than a typical whole career").
+        # Undrafted players (draft_overall=300, the sentinel used throughout this project)
+        # get whatever the curve's lowest-pick estimate is, which likely understates them -
+        # a real limitation of using draft slot as the only length-of-career predictor here.
+        benchmark_games = self._games_played_curve.predict([stats["draft_overall"]])[0]
+        career_value = float(predicted_rate * benchmark_games)
+
+        return AssetValue(name, career_value, "medium", f"{source} (career-projected)", image_url=stats.get("headshot"))
 
     def value_player_live(self, name: str) -> AssetValue:
         try:
