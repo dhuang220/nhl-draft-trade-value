@@ -79,28 +79,42 @@ def draft_explorer_tab():
     draft = load_draft_data()
     curve = load_pick_curve()
     games_curve = load_games_played_curve()
+    current_players = set(load_current_player_names())
 
     year = st.selectbox("Draft year", sorted(draft["year"].unique(), reverse=True))
-    class_df = draft[draft["year"] == year].sort_values("overall_pick")
+    class_df = draft[draft["year"] == year].sort_values("overall_pick").copy()
 
     is_mature = bool(class_df["is_mature"].iloc[0]) if not class_df.empty else False
     if is_mature:
-        st.caption(f"{year} class is **mature** (drafted 2012 or earlier) - graded on full career Point Shares.")
+        st.caption(f"{year} class is **mature** (drafted 2012 or earlier) - used to train the pick-value curve.")
     else:
         st.caption(
-            f"{year} class is **too early to grade** (drafted after 2012) - careers are still in progress, "
-            "so low Point Shares here may just mean \"too soon to tell,\" not \"bad pick.\" Excluded from model training."
+            f"{year} class is **excluded from model training** (drafted after 2012, so most careers are "
+            "still in progress). Below, players are split by whether they're on an NHL roster right now, "
+            "not by class year - see the note further down."
         )
 
-    # A rolling mean over THIS class's actual outcomes, not another isotonic fit -
-    # a single class has exactly one player per pick number, so there's nothing to
-    # average across at a given pick, and forcing monotonicity here would hide the
-    # real (and often noisy - a bust at pick 8, a steal at pick 40) shape of one
-    # specific draft class, which is a different, more honest story than the
-    # long-run expected curve. Computed over the full class before pagination so a
-    # page boundary doesn't distort the smoothing at its edges.
-    class_df = class_df.copy()
-    class_df["actual_trend"] = class_df["point_shares"].rolling(window=7, center=True, min_periods=1).mean()
+    # Per-PLAYER, not per-class: a "mature" class can still have an active veteran (a
+    # long career didn't end just because the class turned 10 years old), and a
+    # "non-mature" class already has plenty of players who are done (a bust who never
+    # stuck, or someone who retired early) whose totals are already final. Checked
+    # against today's actual rosters rather than the class-level year cutoff used for
+    # training-label safety (is_mature above, which stays a class-level concept).
+    class_df["is_active_now"] = class_df["player"].isin(current_players)
+
+    # A rolling mean over THIS class's RETIRED/inactive outcomes only - mixing in
+    # still-active players' understated totals would drag the trend down artificially.
+    # Not another isotonic fit: a single class has exactly one player per pick number,
+    # so there's nothing to average across at a given pick, and forcing monotonicity
+    # here would hide the real (and often noisy) shape of one specific class. Computed
+    # over the full class before pagination so a page boundary doesn't distort the
+    # smoothing at its edges.
+    class_df["actual_trend"] = (
+        class_df["point_shares"]
+        .where(~class_df["is_active_now"])
+        .rolling(window=7, center=True, min_periods=1)
+        .mean()
+    )
 
     # Pace, not just the raw total: a non-mature player's career is still in progress,
     # so their cumulative Point Shares understates them relative to the curve (which is
@@ -132,33 +146,34 @@ def draft_explorer_tab():
         x=pick_range, y=curve_values, mode="lines", name="Expected value (pick curve)",
         line=dict(color="#e15759", width=3),
     ))
-    if is_mature:
-        fig.add_trace(go.Scatter(
-            x=page_df["overall_pick"], y=page_df["actual_trend"], mode="lines", name="This class's actual trend",
-            line=dict(color="#59a14f", width=2, dash="dot"),
-        ))
-        fig.add_trace(go.Scatter(
-            x=page_df["overall_pick"], y=page_df["point_shares"], mode="markers", name="Actual outcome",
-            text=page_df["player"],
-            hovertemplate="%{text}<br>Pick %{x}<br>Career Point Shares: %{y:.1f}<extra></extra>",
-            marker=dict(color="#4e79a7", size=9, line=dict(width=1, color="rgba(0,0,0,0.3)")),
-        ))
-    else:
-        # Only the pace-projected points for non-mature classes - the raw "so far"
-        # totals and their trend line are the understated numbers we're specifically
-        # telling the user not to trust here, so plotting them too would just be
-        # clutter alongside the fair comparison. The raw numbers are still one hover
-        # away rather than gone entirely.
-        fig.add_trace(go.Scatter(
-            x=page_df["overall_pick"], y=page_df["projected_value"], mode="markers",
-            name="Projected career value (at current pace)",
-            text=page_df["player"], customdata=np.stack([page_df["point_shares"], page_df["pace"]], axis=-1),
-            hovertemplate=(
-                "%{text}<br>Pick %{x}<br>Projected career Point Shares: %{y:.1f}"
-                "<br>Actual so far: %{customdata[0]:.1f} (pace: %{customdata[1]:.1f} PS/82GP)<extra></extra>"
-            ),
-            marker=dict(color="#b07aa1", size=11, symbol="diamond", line=dict(width=1, color="rgba(0,0,0,0.3)")),
-        ))
+    retired_df = page_df[~page_df["is_active_now"]]
+    active_df = page_df[page_df["is_active_now"]]
+
+    fig.add_trace(go.Scatter(
+        x=page_df["overall_pick"], y=page_df["actual_trend"], mode="lines",
+        name="Retired/inactive players' actual trend",
+        line=dict(color="#59a14f", width=2, dash="dot"),
+    ))
+    fig.add_trace(go.Scatter(
+        x=retired_df["overall_pick"], y=retired_df["point_shares"], mode="markers", name="Actual outcome (final)",
+        text=retired_df["player"],
+        hovertemplate="%{text}<br>Pick %{x}<br>Career Point Shares: %{y:.1f}<extra></extra>",
+        marker=dict(color="#4e79a7", size=9, line=dict(width=1, color="rgba(0,0,0,0.3)")),
+    ))
+    # Only the pace-projected points for still-active players - their raw "so far"
+    # total is the understated number we're specifically telling the user not to
+    # trust here, so plotting it too would just be clutter alongside the fair
+    # comparison. The raw number is still one hover away rather than gone entirely.
+    fig.add_trace(go.Scatter(
+        x=active_df["overall_pick"], y=active_df["projected_value"], mode="markers",
+        name="Still active - projected at current pace",
+        text=active_df["player"], customdata=np.stack([active_df["point_shares"], active_df["pace"]], axis=-1),
+        hovertemplate=(
+            "%{text}<br>Pick %{x}<br>Projected career Point Shares: %{y:.1f}"
+            "<br>Actual so far: %{customdata[0]:.1f} (pace: %{customdata[1]:.1f} PS/82GP)<extra></extra>"
+        ),
+        marker=dict(color="#b07aa1", size=11, symbol="diamond", line=dict(width=1, color="rgba(0,0,0,0.3)")),
+    ))
     fig.update_layout(
         title=f"{year} draft class: actual outcome vs. expected pick value ({chunk_labels[chosen_bounds]})",
         xaxis_title="Overall pick", yaxis_title="Career Point Shares",
@@ -172,40 +187,43 @@ def draft_explorer_tab():
     page_df = page_df.copy()
     page_df["team_logo"] = page_df["team"].map(team_logos)
 
+    any_active_on_page = bool(page_df["is_active_now"].any())
+
     table_cols = ["team_logo", "overall_pick", "player", "position", "point_shares", "pace"]
     rename_map = {
         "team_logo": "Team", "overall_pick": "Pick", "player": "Player", "position": "Pos",
         "point_shares": "Career PS so far", "pace": "Pace (PS/82GP)",
     }
-    if not is_mature:
+    if any_active_on_page:
         table_cols.append("projected_value")
         rename_map["projected_value"] = "Projected career PS"
-    table_cols.append("is_mature")
-    rename_map["is_mature"] = "Mature"
+    table_cols.append("is_active_now")
+    rename_map["is_active_now"] = "Active now"
 
     table = page_df[table_cols].rename(columns=rename_map)
-    round_cols = {"Pace (PS/82GP)": 1, **({"Projected career PS": 1} if not is_mature else {})}
+    round_cols = {"Pace (PS/82GP)": 1, **({"Projected career PS": 1} if any_active_on_page else {})}
     st.dataframe(
         table.round(round_cols), use_container_width=True, hide_index=True,
         column_config={"Team": st.column_config.ImageColumn("Team", width="small")},
     )
-    if not is_mature:
+    if any_active_on_page:
         st.caption(
-            "The purple diamonds (and 'Projected career PS' column) show what each player's career "
-            "total would be if their current pace continued for a realistic full career at their "
-            "draft slot - the fair comparison against the red curve. See the expander below for why."
+            "The purple diamonds (and 'Projected career PS' column) show what each still-active "
+            "player's career total would be if their current pace continued for a realistic full "
+            "career at their draft slot - the fair comparison against the red curve, regardless of "
+            "which year they were drafted. See the expander below for why."
         )
 
     with st.expander("Why can a legendary player look like he's \"underperforming\" the pick curve?"):
         st.markdown(
-            "The pick curve is trained only on **mature** classes (2000-2012) - players with "
-            "15-20+ complete seasons by the time this dataset was built, so it represents "
-            "*full-career* totals. A player from a non-mature class is compared against that "
-            "curve using only however much career he's played so far, which understates him.\n\n"
-            "**Connor McDavid** (2015, pick #1) is the clearest example: his 82.4 career Point "
-            "Shares cover only 487 games (about 6 82-game seasons), landing well below the "
-            "curve's ~103 full-career expectation for pick #1 - that's the grey dot sitting "
-            "below the red line.\n\n"
+            "The pick curve is trained on **mature** classes (2000-2012) - players with 15-20+ "
+            "complete seasons, so it represents *full-career* totals. A player who's still active "
+            "today has only played part of a career so far, so his raw total understates him against "
+            "that curve - which is exactly why still-active players are shown as a projected pace "
+            "point (purple diamond) here, not their raw total.\n\n"
+            "**Connor McDavid** (2015, pick #1) is the clearest example: his 82.4 career Point Shares "
+            "cover only 487 games (about 6 82-game seasons) - if plotted directly, that would land "
+            "well below the curve's ~103 full-career expectation for pick #1.\n\n"
             "His **pace** is 82.4 / 487 games x 82 = **13.9 Point Shares per 82 games**. Pick #1 "
             "picks who complete a full career play about 887 games on average - so at his current "
             "pace over a realistic career length, McDavid projects to 13.9 x 887 / 82 = **~150 "
