@@ -17,6 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import joblib
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -131,26 +132,31 @@ def draft_explorer_tab():
         x=pick_range, y=curve_values, mode="lines", name="Expected value (pick curve)",
         line=dict(color="#e15759", width=3),
     ))
-    fig.add_trace(go.Scatter(
-        x=page_df["overall_pick"], y=page_df["actual_trend"], mode="lines", name="This class's actual trend",
-        line=dict(color="#59a14f", width=2, dash="dot"),
-    ))
-    fig.add_trace(go.Scatter(
-        x=page_df["overall_pick"], y=page_df["point_shares"], mode="markers", name="Actual outcome (so far)",
-        text=page_df["player"], customdata=page_df["pace"],
-        hovertemplate="%{text}<br>Pick %{x}<br>Career Point Shares so far: %{y:.1f}<br>Pace: %{customdata:.1f} PS/82GP<extra></extra>",
-        marker=dict(
-            color="#4e79a7" if is_mature else "#bab0ac",
-            size=9,
-            line=dict(width=1, color="rgba(0,0,0,0.3)"),
-        ),
-    ))
-    if not is_mature:
+    if is_mature:
+        fig.add_trace(go.Scatter(
+            x=page_df["overall_pick"], y=page_df["actual_trend"], mode="lines", name="This class's actual trend",
+            line=dict(color="#59a14f", width=2, dash="dot"),
+        ))
+        fig.add_trace(go.Scatter(
+            x=page_df["overall_pick"], y=page_df["point_shares"], mode="markers", name="Actual outcome",
+            text=page_df["player"],
+            hovertemplate="%{text}<br>Pick %{x}<br>Career Point Shares: %{y:.1f}<extra></extra>",
+            marker=dict(color="#4e79a7", size=9, line=dict(width=1, color="rgba(0,0,0,0.3)")),
+        ))
+    else:
+        # Only the pace-projected points for non-mature classes - the raw "so far"
+        # totals and their trend line are the understated numbers we're specifically
+        # telling the user not to trust here, so plotting them too would just be
+        # clutter alongside the fair comparison. The raw numbers are still one hover
+        # away rather than gone entirely.
         fig.add_trace(go.Scatter(
             x=page_df["overall_pick"], y=page_df["projected_value"], mode="markers",
             name="Projected career value (at current pace)",
-            text=page_df["player"],
-            hovertemplate="%{text}<br>Pick %{x}<br>Projected career Point Shares: %{y:.1f}<extra></extra>",
+            text=page_df["player"], customdata=np.stack([page_df["point_shares"], page_df["pace"]], axis=-1),
+            hovertemplate=(
+                "%{text}<br>Pick %{x}<br>Projected career Point Shares: %{y:.1f}"
+                "<br>Actual so far: %{customdata[0]:.1f} (pace: %{customdata[1]:.1f} PS/82GP)<extra></extra>"
+            ),
             marker=dict(color="#b07aa1", size=11, symbol="diamond", line=dict(width=1, color="rgba(0,0,0,0.3)")),
         ))
     fig.update_layout(
