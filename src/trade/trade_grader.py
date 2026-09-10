@@ -36,6 +36,7 @@ from src.etl.fetch_current_stats import (
     SeasonNotFoundError,
     fetch_current_player_stats,
     fetch_player_season_stats,
+    fetch_team_standings,
 )
 from src.features.value_features import FEATURE_COLUMNS, RATE_STATS
 
@@ -44,6 +45,23 @@ RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 
 FUTURE_PICK_ANNUAL_DISCOUNT = 0.92  # a pick 3 years out is worth 0.92**3 of one available today
 CONDITIONAL_PICK_DISCOUNT = 0.7  # a condition might not be met, so it might not convey at all
+
+
+def estimate_pick_slot_from_standing(pick_round: int, league_rank: int) -> int:
+    """Estimate an overall draft slot for a team's pick in a given round, from that team's
+    current league standing (1 = best record, 32 = worst) - used for a hypothetical trade,
+    where the trading team is known but the actual future draft order isn't yet.
+
+    This assumes a flat worst-picks-first order every round (e.g. the league's worst team
+    gets pick 1, its best team gets pick 32, round 2 repeats the same order starting at 33,
+    etc.). That's a real simplification, not the league's actual draft-order rules: it
+    ignores the draft lottery's reshuffling among non-playoff teams (the worst record isn't
+    guaranteed pick 1) and the reverse-standings tiebreak among playoff teams. It's meant to
+    be a directionally-realistic improvement over a single round-wide median, not an exact
+    prediction of a future pick number.
+    """
+    estimated = (pick_round - 1) * 32 + (33 - league_rank)
+    return max(estimated, 1)
 
 
 @dataclass
@@ -61,8 +79,9 @@ class AssetValue:
 
 @dataclass
 class HypotheticalPick:
-    """A future draft pick in a hypothetical trade - overall slot is never known
-    yet, so value_pick() always falls back to the median-by-round estimate."""
+    """A future draft pick in a hypothetical trade - overall slot is never known yet, so
+    value_pick() falls back to a standings-based estimate for the trading team when their
+    current league rank is available, or the median-by-round estimate otherwise."""
 
     year: int
     round: int
@@ -84,7 +103,13 @@ class TradeSideGrade:
 
 
 class TradeGrader:
-    def __init__(self):
+    def __init__(self, team_standings: dict[str, int] | None = None):
+        # Optional and lazy: a caller (e.g. the dashboard) can pass standings it already has,
+        # otherwise this is fetched from the live API on first actual use (a hypothetical
+        # trade that needs a team's rank), not at construction - keeps TradeGrader() itself
+        # network-free for callers/tests that only need the 2016-17/career-fallback paths.
+        self._team_standings = team_standings
+
         self._season_values = pd.read_csv(PROCESSED_DIR / "player_valuations_2016_17.csv")
         self._season_values["full_name"] = (
             self._season_values["First Name"] + " " + self._season_values["Last Name"]
@@ -110,6 +135,11 @@ class TradeGrader:
             .median()
             .to_dict()
         )
+
+    def _get_team_standings(self) -> dict[str, int]:
+        if self._team_standings is None:
+            self._team_standings = fetch_team_standings()
+        return self._team_standings
 
     def _season_values_feature_medians(self) -> dict:
         # Only CF/CA/xGF/xGA are ever missing (live players can't supply them) -
@@ -171,15 +201,31 @@ class TradeGrader:
 
     # --- Pick valuation -------------------------------------------------------
 
-    def value_pick(self, pick_year: float, pick_round: float, pick_overall: float, is_conditional: bool, trade_year: int) -> AssetValue:
+    def value_pick(
+        self,
+        pick_year: float,
+        pick_round: float,
+        pick_overall: float,
+        is_conditional: bool,
+        trade_year: int,
+        team_rank: int | None = None,
+    ) -> AssetValue:
+        """team_rank (1-32, 1 = best record) is only meaningful for a hypothetical trade,
+        where the trading team is known - grade_historical_trade never passes it, since we
+        don't know a past trade's contemporaneous standings-implied pick value."""
         label = f"{int(pick_year) if pd.notna(pick_year) else '?'} round {int(pick_round) if pd.notna(pick_round) else '?'} pick"
 
+        source = "pick value curve"
         if pd.notna(pick_overall):
             slot = pick_overall
         elif pd.notna(pick_round):
-            slot = self._median_overall_pick_by_round.get(int(pick_round))
-            if slot is None:
-                return AssetValue(label, None, "none", "unknown round")
+            if team_rank is not None:
+                slot = estimate_pick_slot_from_standing(int(pick_round), team_rank)
+                source = "pick value curve (standings-based slot estimate)"
+            else:
+                slot = self._median_overall_pick_by_round.get(int(pick_round))
+                if slot is None:
+                    return AssetValue(label, None, "none", "unknown round")
         else:
             return AssetValue(label, None, "none", "no pick detail")
 
@@ -191,7 +237,7 @@ class TradeGrader:
             discount *= CONDITIONAL_PICK_DISCOUNT
 
         confidence = "medium" if pd.notna(pick_overall) else "low"
-        return AssetValue(label, base_value * discount, confidence, "pick value curve")
+        return AssetValue(label, base_value * discount, confidence, source)
 
     # --- Trade-level grading ----------------------------------------------
 
@@ -227,16 +273,24 @@ class TradeGrader:
         self,
         side_a: list[str | HypotheticalPick],
         side_b: list[str | HypotheticalPick],
+        team_a: str | None = None,
+        team_b: str | None = None,
         trade_year: int | None = None,
     ) -> dict[str, TradeSideGrade]:
         trade_year = trade_year or date.today().year
         grades = {}
-        for label, assets in [("side_a", side_a), ("side_b", side_b)]:
-            grade = TradeSideGrade(team=label)
+        for label, assets, team in [("side_a", side_a, team_a), ("side_b", side_b, team_b)]:
+            grade = TradeSideGrade(team=team or label)
+            # Only hit the standings lookup (which fetches live on first use) when a real
+            # team was actually given - a caller that doesn't care about team identity
+            # shouldn't pay for a network call it doesn't need.
+            team_rank = self._get_team_standings().get(team) if team else None
             for asset in assets:
                 if isinstance(asset, HypotheticalPick):
                     grade.assets.append(
-                        self.value_pick(asset.year, asset.round, None, asset.conditional, trade_year)
+                        self.value_pick(
+                            asset.year, asset.round, None, asset.conditional, trade_year, team_rank=team_rank
+                        )
                     )
                 else:
                     grade.assets.append(self.value_player_live(asset))

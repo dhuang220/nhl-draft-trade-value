@@ -49,3 +49,11 @@ def test_unrelated_short_nickname_like_first_name_does_not_match():
     # rescued by the fuzzy fallback just because the names are short.
     index = build_last_name_index(["Jack Smith"])
     assert not is_same_player("Josh Smith", index)
+
+
+def test_position_disambiguation_suffix_is_stripped():
+    # fetch_current_stats.py appends " (POS)" when two active players share an exact
+    # name (e.g. two real "Elias Pettersson"s on the same roster, one C one D) - that
+    # suffix must not be read as the surname.
+    index = build_last_name_index(["Elias Pettersson (C)", "Elias Pettersson (D)"])
+    assert is_same_player("Elias Pettersson", index)

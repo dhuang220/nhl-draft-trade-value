@@ -1,11 +1,31 @@
 import pytest
 
-from src.trade.trade_grader import TradeGrader
+from src.trade.trade_grader import TradeGrader, estimate_pick_slot_from_standing
 
 
 @pytest.fixture(scope="module")
 def grader():
     return TradeGrader()
+
+
+def test_last_place_teams_pick_estimates_near_top_of_round():
+    slot = estimate_pick_slot_from_standing(pick_round=1, league_rank=32)
+    assert slot <= 3
+
+
+def test_first_place_teams_pick_estimates_near_bottom_of_round():
+    slot = estimate_pick_slot_from_standing(pick_round=1, league_rank=1)
+    assert slot >= 30
+
+
+def test_later_round_estimate_is_higher_than_earlier_round_for_same_team():
+    round_1 = estimate_pick_slot_from_standing(pick_round=1, league_rank=16)
+    round_2 = estimate_pick_slot_from_standing(pick_round=2, league_rank=16)
+    assert round_2 > round_1
+
+
+def test_estimate_never_drops_below_one():
+    assert estimate_pick_slot_from_standing(pick_round=1, league_rank=1) >= 1
 
 
 def test_future_pick_is_discounted_relative_to_immediate_pick(grader):

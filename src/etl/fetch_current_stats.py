@@ -8,7 +8,9 @@ and xGA always come back None here. Callers should impute those (e.g. with the t
 median, same as clean_value_training_data does) rather than treat None as zero.
 """
 
+import re
 import time
+from collections import Counter
 
 import requests
 
@@ -41,15 +43,30 @@ def _get_json(url: str, params: dict | None = None, retries: int = 3, delay: flo
     resp.raise_for_status()
 
 
+_POSITION_SUFFIX_RE = re.compile(r"^(.*) \(([A-Z]{1,2})\)$")
+
+
 def search_player_id(player_name: str) -> int:
     """Resolve a full player name to an NHL player ID via the search-index API.
 
     Only an exact (case-insensitive) name match is accepted - the search endpoint does fuzzy
     matching and happily returns an unrelated player (e.g. "Wayne Gretzky" -> "Wayne Savage")
     instead of nothing, so a loose match here would silently value the wrong player.
+
+    player_name can optionally carry a disambiguating " (POS)" suffix, as produced by
+    fetch_rosters_by_team/fetch_all_current_players for two players who share an exact full
+    name (e.g. Vancouver currently rosters two active "Elias Pettersson"s - a D and a C).
+    When present, it's parsed off and used to additionally filter candidates by position,
+    since the name match alone can't tell them apart. Ordinary names without the suffix
+    behave exactly as before.
     """
-    results = _get_json(SEARCH_URL, params={"culture": "en-us", "limit": 10, "q": player_name})
-    matches = [r for r in results if r["name"].lower() == player_name.lower()]
+    suffix_match = _POSITION_SUFFIX_RE.match(player_name)
+    lookup_name, position = (suffix_match.group(1), suffix_match.group(2)) if suffix_match else (player_name, None)
+
+    results = _get_json(SEARCH_URL, params={"culture": "en-us", "limit": 10, "q": lookup_name})
+    matches = [r for r in results if r["name"].lower() == lookup_name.lower()]
+    if position:
+        matches = [r for r in matches if r.get("positionCode") == position]
     if not matches:
         raise PlayerNotFoundError(f"No exact player match found for '{player_name}'")
 
@@ -179,27 +196,72 @@ def fetch_player_nhl_season_ids(player_name: str) -> list[int]:
     return sorted(season_ids)
 
 
+def _fetch_standings() -> list[dict]:
+    """Raw standings rows, shared by every function below that needs them so a caller using
+    more than one of those functions doesn't trigger a redundant request each."""
+    return _get_json(STANDINGS_URL)["standings"]
+
+
 def fetch_team_logos() -> dict[str, str]:
     """Full team name -> logo URL, for every current NHL team. Historical/defunct team names
     (e.g. 'Quebec Nordiques') simply won't be in this dict - callers should treat a missing
     key as "no logo available" rather than an error, the same graceful-degradation pattern
     used everywhere else in this project."""
-    standings = _get_json(STANDINGS_URL)["standings"]
-    return {team["teamName"]["default"]: team["teamLogo"] for team in standings}
+    return {team["teamName"]["default"]: team["teamLogo"] for team in _fetch_standings()}
+
+
+def fetch_team_standings() -> dict[str, int]:
+    """Full team name -> current leagueSequence (1 = best record in the league, 32 = worst),
+    for every current NHL team. Used as a proxy for where a team's future draft pick will
+    land - see estimate_pick_slot_from_standing in trade_grader.py."""
+    return {team["teamName"]["default"]: team["leagueSequence"] for team in _fetch_standings()}
+
+
+def _fetch_rosters_raw() -> dict[str, list[dict]]:
+    """Full team name -> list of raw player dicts (firstName/lastName/positionCode/id, as
+    returned by the roster API) for that team's current roster - shared by the two public
+    functions below so the 32-team loop only happens once."""
+    rosters = {}
+    for team in _fetch_standings():
+        roster = _get_json(ROSTER_URL.format(team_abbrev=team["teamAbbrev"]["default"]))
+        rosters[team["teamName"]["default"]] = roster["forwards"] + roster["defensemen"] + roster["goalies"]
+        time.sleep(0.3)
+    return rosters
+
+
+def _disambiguate_duplicate_names(players: list[dict]) -> list[str]:
+    """Full display names for a list of player dicts (firstName/lastName/positionCode).
+
+    Two different players can share an exact full name (e.g. Vancouver currently rosters two
+    active "Elias Pettersson"s - a defenseman and a center) - a plain name string would then
+    be ambiguous, or silently collapse the two into one entry if used as a set/dict key
+    upstream. Only names that actually collide within this list get a " (POS)" suffix
+    appended to disambiguate them; every unique name is left exactly as-is.
+    """
+    names = [f"{p['firstName']['default']} {p['lastName']['default']}" for p in players]
+    counts = Counter(names)
+    return [
+        f"{name} ({player['positionCode']})" if counts[name] > 1 else name
+        for name, player in zip(names, players)
+    ]
+
+
+def fetch_rosters_by_team() -> dict[str, list[str]]:
+    """Full team name -> sorted list of full player names on that team's current roster.
+    Disambiguated against collisions within that same team's roster only (see
+    _disambiguate_duplicate_names) - a name shared across two DIFFERENT teams doesn't need
+    disambiguating here, since each team's list is already unambiguous on its own."""
+    return {team: sorted(_disambiguate_duplicate_names(players)) for team, players in _fetch_rosters_raw().items()}
 
 
 def fetch_all_current_players() -> list[str]:
     """Every player on a current NHL roster, for populating a search/select input that can
-    only produce valid names (rather than free text a user could mistype)."""
-    teams = sorted({t["teamAbbrev"]["default"] for t in _get_json(STANDINGS_URL)["standings"]})
-
-    names = []
-    for team in teams:
-        roster = _get_json(ROSTER_URL.format(team_abbrev=team))
-        for player in roster["forwards"] + roster["defensemen"] + roster["goalies"]:
-            names.append(f"{player['firstName']['default']} {player['lastName']['default']}")
-        time.sleep(0.3)
-    return sorted(set(names))
+    only produce valid names (rather than free text a user could mistype). Disambiguated
+    league-wide (see _disambiguate_duplicate_names) - a plain sorted(set(...)) over names
+    alone would silently collapse two different players sharing an exact full name (even
+    across two different teams) down to one entry, losing the other."""
+    all_players = [player for players in _fetch_rosters_raw().values() for player in players]
+    return sorted(set(_disambiguate_duplicate_names(all_players)))
 
 
 if __name__ == "__main__":

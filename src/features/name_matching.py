@@ -8,9 +8,16 @@ theoretically produce a false positive (a real "Cal Smith" wrongly matched to an
 the same kind of graceful-approximation call made throughout this project's name handling.
 """
 
+import re
 import unicodedata
 from collections import defaultdict
 from difflib import SequenceMatcher
+
+# fetch_current_stats.py disambiguates two same-name players on a roster by appending
+# " (POS)" (e.g. two active "Elias Pettersson"s -> "Elias Pettersson (C)"/"(D)"). Strip
+# that back off before splitting, or it gets read as the surname ("(d)") instead of
+# "pettersson", breaking the match entirely.
+_POSITION_SUFFIX = re.compile(r"\s*\([A-Za-z.]+\)\s*$")
 
 # Common English nicknames that don't share a prefix with their formal name (a
 # prefix check alone misses "Charlie"/"Charles" - they diverge after "charl").
@@ -64,6 +71,7 @@ _FUZZY_THRESHOLD = 0.75
 
 
 def _normalize(name: str) -> str:
+    name = _POSITION_SUFFIX.sub("", name)
     stripped = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode()
     return stripped.strip().lower()
 

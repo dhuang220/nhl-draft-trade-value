@@ -22,7 +22,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.etl.fetch_current_stats import fetch_all_current_players, fetch_team_logos
+from src.etl.fetch_current_stats import fetch_all_current_players, fetch_rosters_by_team, fetch_team_logos
 from src.features.draft_features import clean_draft_data, merge_draft_sources
 from src.features.name_matching import build_last_name_index, is_same_player
 from src.trade.trade_grader import HypotheticalPick, TradeGrader, TradeSideGrade
@@ -78,6 +78,11 @@ def load_current_player_names() -> list[str]:
 @st.cache_data(ttl=3600)
 def load_team_logos() -> dict[str, str]:
     return fetch_team_logos()
+
+
+@st.cache_data(ttl=3600)
+def load_rosters_by_team() -> dict[str, list[str]]:
+    return fetch_rosters_by_team()
 
 
 def draft_explorer_tab():
@@ -356,8 +361,11 @@ def _pick_builder(side_key: str, trade_year: int) -> list[HypotheticalPick]:
 def hypothetical_trade_mode():
     grader = load_trade_grader()
 
-    with st.spinner("Loading current rosters..."):
-        player_names = load_current_player_names()
+    with st.spinner("Loading current rosters and standings..."):
+        rosters_by_team = load_rosters_by_team()
+        team_logos = load_team_logos()
+
+    team_names = sorted(rosters_by_team.keys())
 
     trade_year = st.number_input(
         "Trade year", min_value=date.today().year, max_value=date.today().year + 3,
@@ -369,27 +377,52 @@ def hypothetical_trade_mode():
 
     col_a, col_b = st.columns(2)
     with col_a:
-        st.markdown("**Side A**")
-        side_a_players = st.multiselect("Players", player_names, key="side_a_players")
+        st.markdown("**Team A**")
+        select_col, logo_col = st.columns([3, 1])
+        team_a = select_col.selectbox("Team", team_names, key="side_a_team")
+        logo_a = team_logos.get(team_a)
+        if logo_a:
+            logo_col.image(logo_a, width=48)
+        # Keyed by the chosen team so switching teams resets the selection instead of
+        # crashing on a previous pick that isn't on the new team's roster.
+        side_a_players = st.multiselect(
+            "Players", rosters_by_team.get(team_a, []), key=f"side_a_players_{team_a}"
+        )
         side_a_picks = _pick_builder("side_a", trade_year)
     with col_b:
-        st.markdown("**Side B**")
-        side_b_players = st.multiselect("Players", player_names, key="side_b_players")
+        st.markdown("**Team B**")
+        select_col, logo_col = st.columns([3, 1])
+        default_b = 1 if len(team_names) > 1 else 0
+        team_b = select_col.selectbox("Team", team_names, index=default_b, key="side_b_team")
+        logo_b = team_logos.get(team_b)
+        if logo_b:
+            logo_col.image(logo_b, width=48)
+        side_b_players = st.multiselect(
+            "Players", rosters_by_team.get(team_b, []), key=f"side_b_players_{team_b}"
+        )
         side_b_picks = _pick_builder("side_b", trade_year)
+
+    same_team = team_a == team_b
+    if same_team:
+        st.warning("Team A and Team B must be different teams - pick two different teams to build a trade.")
 
     side_a = [*side_a_players, *side_a_picks]
     side_b = [*side_b_players, *side_b_picks]
 
-    if st.button("Grade trade", disabled=not (side_a and side_b)):
+    if st.button("Grade trade", disabled=same_team or not (side_a and side_b)):
         with st.spinner("Fetching live stats and grading..."):
-            grades = grader.grade_hypothetical_trade(side_a, side_b, trade_year=trade_year)
+            grades = grader.grade_hypothetical_trade(
+                side_a, side_b, team_a=team_a, team_b=team_b, trade_year=trade_year
+            )
         _render_grade_comparison(grades)
         st.caption(
             "Every player name above is a real current roster player, but the live-stats lookup uses "
             "a separate NHL API that occasionally formats a name differently (suffixes, accents) - on "
             "the rare mismatch, that player falls back to career draft Point Shares instead of live "
             "stats, and shows up as unvalued only if that also fails. Picks are discounted for how "
-            "far out they are from the trade year above, and for being conditional."
+            "far out they are from the trade year above, and for being conditional, and are valued "
+            "using each team's current league standing (a worse-standing team's future pick is worth "
+            "more, since it's estimated to land earlier in the draft)."
         )
 
 
