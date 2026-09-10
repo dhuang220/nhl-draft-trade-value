@@ -32,9 +32,18 @@ class SeasonNotFoundError(Exception):
 def _get_json(url: str, params: dict | None = None, retries: int = 3, delay: float = 0.5) -> dict:
     """Retries with backoff on a 429 (the NHL API returns an HTML challenge page, not JSON,
     when rate limited) - needed once the Trade Grader started making several live requests
-    per historical trade instead of just a couple per hypothetical one."""
+    per historical trade instead of just a couple per hypothetical one. Also retries on a
+    dropped/timed-out connection, which surfaces as a requests exception rather than a status
+    code - seen in practice during long batch fetches (e.g. fetch_recent_draft_data.py) where
+    an unhandled one would otherwise kill the whole run over a single transient blip."""
     for attempt in range(retries):
-        resp = requests.get(url, params=params, timeout=10)
+        try:
+            resp = requests.get(url, params=params, timeout=10)
+        except requests.exceptions.RequestException:
+            if attempt == retries - 1:
+                raise
+            time.sleep(delay * (2**attempt))
+            continue
         if resp.status_code == 429:
             time.sleep(delay * (2**attempt))
             continue
@@ -63,7 +72,10 @@ def search_player_id(player_name: str) -> int:
     suffix_match = _POSITION_SUFFIX_RE.match(player_name)
     lookup_name, position = (suffix_match.group(1), suffix_match.group(2)) if suffix_match else (player_name, None)
 
-    results = _get_json(SEARCH_URL, params={"culture": "en-us", "limit": 10, "q": lookup_name})
+    # limit=10 used to be enough, but the index isn't sorted by relevance - an exact match
+    # for a common first name (e.g. "Logan Cooley") can land past position 10, which silently
+    # produced a false "not found" for an established, active player.
+    results = _get_json(SEARCH_URL, params={"culture": "en-us", "limit": 50, "q": lookup_name})
     matches = [r for r in results if r["name"].lower() == lookup_name.lower()]
     if position:
         matches = [r for r in matches if r.get("positionCode") == position]

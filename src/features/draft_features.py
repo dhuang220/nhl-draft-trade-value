@@ -19,12 +19,13 @@ FEATURE_COLUMNS = ["overall_pick", "age", "position_group"]
 
 
 def merge_draft_sources(kaggle_df: pd.DataFrame, recent_df: pd.DataFrame) -> pd.DataFrame:
-    """Union the Kaggle-sourced 2000-2022 rows with the NHL-API-sourced 2023+ rows
+    """Union the Kaggle-sourced 2000-2020 rows with the NHL-API-sourced 2021+ rows
     (recent_df's point_shares is our value model's predicted career value, not the real
-    stat - see fetch_recent_draft_data.py). The Kaggle dataset actually covers 2021-2022
-    too (it just wasn't being used) - 2023 is where it stops and the live source picks up."""
-    kaggle = kaggle_df[(kaggle_df["year"] >= 2000) & (kaggle_df["year"] <= 2022)]
-    recent = recent_df[recent_df["year"] >= 2023]
+    stat - see fetch_recent_draft_data.py). The Kaggle dataset does have 2021-2022 rows,
+    but their point_shares/games_played are effectively blank (a pre-career snapshot) -
+    live-fetched values replace them here rather than being unioned in."""
+    kaggle = kaggle_df[(kaggle_df["year"] >= 2000) & (kaggle_df["year"] <= 2020)]
+    recent = recent_df[recent_df["year"] >= 2021]
     return pd.concat([kaggle, recent], ignore_index=True)
 
 

@@ -80,10 +80,11 @@ st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 @st.cache_data
 def load_draft_data() -> pd.DataFrame:
     kaggle = pd.read_csv(RAW_DIR / "draft_history_raw.csv")
-    # 2023+ classes have no Kaggle equivalent yet - recent_draft_data.csv is fetched live from
-    # the NHL API instead (see fetch_recent_draft_data.py); its point_shares is our value
-    # model's predicted career value, not the real stat, since these players are too recent
-    # for one to exist.
+    # 2021+ classes aren't usable from Kaggle (2021-2022 are a near-empty pre-career snapshot,
+    # 2023+ doesn't exist there at all) - recent_draft_data.csv is fetched live from the NHL
+    # API instead (see fetch_recent_draft_data.py); its point_shares is our value model's
+    # predicted career value, not the real stat, since these players are too recent for one
+    # to exist (or their career wasn't captured yet as of the Kaggle snapshot).
     recent = pd.read_csv(PROCESSED_DIR / "recent_draft_data.csv")
     return clean_draft_data(merge_draft_sources(kaggle, recent))
 

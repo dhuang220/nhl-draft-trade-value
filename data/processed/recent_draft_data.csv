@@ -1,9 +1,457 @@
 year,overall_pick,team,player,position,games_played,point_shares
+2021,1,Buffalo Sabres,Owen Power,D,323,17.132380140009765
+2021,2,Seattle Kraken,Matty Beniers,C,331,23.409280774764497
+2021,3,Anaheim Ducks,Mason McTavish,C,304,19.665065201218223
+2021,4,New Jersey Devils,Luke Hughes,D,223,13.50545870188258
+2021,5,Columbus Blue Jackets,Kent Johnson,C,274,14.865447290313886
+2021,6,Detroit Red Wings,Simon Edvinsson,D,175,11.439501814685247
+2021,7,San Jose Sharks,William Eklund,LW,252,19.34143137551284
+2021,8,Los Angeles Kings,Brandt Clarke,D,185,6.255461184776731
+2021,9,Arizona Coyotes,Dylan Guenther,RW,227,21.036052006188164
+2021,10,Ottawa Senators,Tyler Boucher,RW,0,0.0
+2021,12,Columbus Blue Jackets,Cole Sillinger,C,367,15.823289155548524
+2021,13,Calgary Flames,Matt Coronato,RW,192,11.165464163043278
+2021,14,Buffalo Sabres,Isak Rosen,RW,52,0.7442691813588159
+2021,15,Detroit Red Wings,Sebastian Cossa,G,1,0.0
+2021,16,New York Rangers,Brennan Othmann,LW,44,-0.1705203502061062
+2021,17,St. Louis Blues,Zachary Bolduc,C,175,6.396539236332536
+2021,18,Winnipeg Jets,Chaz Lucius,C,0,0.0
+2021,19,Nashville Predators,Fedor Svechkov,C,122,3.289711326740302
+2021,20,Minnesota Wild,Jesper Wallstedt,G,40,0.0
+2021,21,Boston Bruins,Fabian Lysell,RW,12,0.0958964535763091
+2021,22,Edmonton Oilers,Xavier Bourgault,C,2,-0.0515365716326452
+2021,23,Dallas Stars,Wyatt Johnston,C,328,28.05623456906041
+2021,24,Florida Panthers,Mackie Samoskevich,RW,156,5.917793927121448
+2021,25,Columbus Blue Jackets,Corson Ceulemans,D,0,0.0
+2021,26,Minnesota Wild,Carson Lambos,D,1,0.0043658677619414
+2021,27,Nashville Predators,Zachary L'Heureux,LW,87,1.7612770808338407
+2021,28,Colorado Avalanche,Oskar Olausson,RW,4,-0.0256550669182145
+2021,29,New Jersey Devils,Chase Stillman,RW,0,0.0
+2021,30,Vegas Golden Knights,Zach Dean,C,9,-0.1245317010379535
+2021,31,Montréal Canadiens,Logan Mailloux,D,75,2.4501547618553614
+2021,32,Chicago Blackhawks,Nolan Allan,D,43,0.9620576414020529
+2021,33,Buffalo Sabres,Prokhor Poltapov,LW,0,0.0
+2021,34,Anaheim Ducks,Olen Zellweger,D,164,5.535579193065309
+2021,35,Seattle Kraken,Ryker Evans,D,176,7.688112293639577
+2021,36,Detroit Red Wings,Shai Buium,D,0,0.0
+2021,37,Arizona Coyotes,Josh Doan,RW,144,7.947660694021338
+2021,38,Vegas Golden Knights,Daniil Chayka,D,0,0.0
+2021,39,Ottawa Senators,Zack Ostapchuk,C,122,0.2307391755002582
+2021,40,Carolina Hurricanes,Scott Morrow,D,4,-0.1015881768733443
+2021,41,Vancouver Canucks,Danila Klimovich,RW,0,0.0
+2021,42,Los Angeles Kings,Francesco Pinelli,C,0,0.0
+2021,43,Arizona Coyotes,Ilya Fedotov,LW,0,0.0
+2021,44,Carolina Hurricanes,Aleksi Heimosalmi,D,0,0.0
+2021,45,Calgary Flames,William Stromgren,LW,3,-0.0846303806876405
+2021,46,Philadelphia Flyers,Samu Tuomaala,RW,0,0.0
+2021,47,Dallas Stars,Logan Stankoven,C,183,9.6117589774564
+2021,48,Dallas Stars,Artem Grushnikov,D,0,0.0
+2021,49,Ottawa Senators,Ben Roger,D,0,0.0
+2021,50,Winnipeg Jets,Nikita Chibrikov,RW,16,0.3979502735073806
+2021,51,Carolina Hurricanes,Ville Koivunen,RW,47,1.0492421810551296
+2021,52,New York Islanders,Aatu Räty,C,114,1.9269502997543069
+2021,53,Buffalo Sabres,Aleksandr Kisakov,LW,0,0.0
+2021,54,Minnesota Wild,Jack Peart,D,0,0.0
+2021,55,Washington Capitals,Vincent Iorio,D,36,0.5310981313915502
+2021,56,Florida Panthers,Evan Nause,D,0,0.0
+2021,57,Toronto Maple Leafs,Matthew Knies,LW,240,16.85548311045242
+2021,58,Pittsburgh Penguins,Tristan Broz,C,1,-0.0212309014010505
+2021,59,Los Angeles Kings,Samuel Helenius,C,103,-0.0534556828941526
+2021,60,Arizona Coyotes,J.J. Moser,D,338,13.545440851352414
+2021,61,Colorado Avalanche,Sean Behrens,D,0,0.0
+2021,62,Chicago Blackhawks,Colton Dach,C,86,1.7201504068651643
+2021,63,Montréal Canadiens,Riley Kidney,C,0,0.0
+2021,64,Montréal Canadiens,Oliver Kapanen,C,100,3.2549599908112947
+2021,65,New York Rangers,Jayden Grubbe,C,0,0.0
+2021,66,Anaheim Ducks,Sasha Pastujov,RW,0,0.0
+2021,67,Seattle Kraken,Ryan Winterton,C,89,1.5126542108938184
+2021,68,New Jersey Devils,Samu Salminen,C,0,0.0
+2021,69,Columbus Blue Jackets,Stanislav Svozil,D,2,0.0772618001362319
+2021,70,Detroit Red Wings,Carter Mazur,LW,9,-0.1040676605092399
+2021,71,St. Louis Blues,Simon Robertsson,RW,0,0.0
+2021,72,Nashville Predators,Anton Olsson,D,0,0.0
+2021,73,Dallas Stars,Ayrton Martino,LW,0,0.0
+2021,74,Ottawa Senators,Oliver Johansson,LW,0,0.0
+2021,75,New York Rangers,Ryder Korczak,C,0,0.0
+2021,76,Anaheim Ducks,Tyson Hinds,D,6,-0.1593940975465853
+2021,77,Calgary Flames,Cole Huckins,C,0,0.0
+2021,78,Philadelphia Flyers,Aleksei Kolosov,G,21,0.0
+2021,79,Dallas Stars,Justin Ertel,LW,0,0.0
+2021,80,Washington Capitals,Brent Johnson,D,309,0.0
+2021,81,San Jose Sharks,Benjamin Gaudreau,G,0,0.0
+2021,82,Winnipeg Jets,Dmitry Kuzmin,D,0,0.0
+2021,83,Carolina Hurricanes,Patrik Hamrla,G,0,0.0
+2021,84,Los Angeles Kings,Kirill Kirsanov,D,0,0.0
+2021,85,Boston Bruins,Brett Harrison,C,0,0.0
+2021,86,Minnesota Wild,Caedan Bankier,C,0,0.0
+2021,87,Montréal Canadiens,Dmitri Kostenko,D,0,0.0
+2021,88,Buffalo Sabres,Stiven Sardarian,RW,0,0.0
+2021,89,Calgary Flames,Cameron Whynot,D,0,0.0
+2021,90,Edmonton Oilers,Luca Munzenberger,D,0,0.0
+2021,91,Chicago Blackhawks,Taige Harding,D,0,0.0
+2021,92,Colorado Avalanche,Andrei Buyalsky,C,0,0.0
+2021,93,New York Islanders,Tristan Lennox,G,1,0.0
+2021,94,Carolina Hurricanes,Aidan Hreschuk,D,0,0.0
+2021,95,Buffalo Sabres,Josh Bloom,LW,0,0.0
+2021,96,Tampa Bay Lightning,Roman Schmidt,D,0,0.0
+2021,97,Buffalo Sabres,Olivier Nadeau,RW,0,0.0
+2021,98,Anaheim Ducks,Josh Lopina,C,0,0.0
+2021,99,Seattle Kraken,Ville Ottavainen,D,1,0.0962074805614842
+2021,100,New Jersey Devils,Jakub Malek,G,0,0.0
+2021,101,Columbus Blue Jackets,Guillaume Richard,D,0,0.0
+2021,102,Vegas Golden Knights,Jakub Brabenec,C,0,0.0
+2021,103,San Jose Sharks,Gannon Laroque,D,0,0.0
+2021,104,New York Rangers,Brody Lamb,RW,0,0.0
+2021,105,Chicago Blackhawks,Ethan Del Mastro,D,45,0.9122911558917532
+2021,106,New York Rangers,Kalle Vaisanen,LW,0,0.0
+2021,107,Arizona Coyotes,Emil Lilleberg,D,163,1.0702777758695228
+2021,108,Chicago Blackhawks,Victor Stjernborg,C,0,0.0
+2021,109,Carolina Hurricanes,Jackson Blake,RW,162,8.440530832076782
+2021,110,Philadelphia Flyers,Brian Zanetti,D,0,0.0
+2021,111,Dallas Stars,Conner Roulette,LW,0,0.0
+2021,112,New York Rangers,Talyn Boyko,G,0,0.0
+2021,113,Montréal Canadiens,William Trudeau,D,0,0.0
+2021,114,Detroit Red Wings,Redmond Savage,C,0,0.0
+2021,115,Nashville Predators,Ryan Ufko,D,19,1.1395004825336652
+2021,116,Edmonton Oilers,Jake Chiasson,C,0,0.0
+2021,117,Boston Bruins,Philip Svedeback,G,0,0.0
+2021,118,Minnesota Wild,Kyle Masters,D,0,0.0
+2021,119,Washington Capitals,Joaquim Lemay,D,0,0.0
+2021,120,Florida Panthers,Vladislav Lukashevich,D,0,0.0
+2021,121,San Jose Sharks,Ethan Cardwell,RW,13,0.1306723082127656
+2021,122,Arizona Coyotes,Rasmus Korhonen,G,0,0.0
+2021,123,Ottawa Senators,Carson Latimer,RW,0,0.0
+2021,124,Nashville Predators,Jack Matier,D,0,0.0
+2021,125,New York Islanders,Cameron Berg,C,0,0.0
+2021,126,Tampa Bay Lightning,Dylan Duke,LW,3,0.0834011474528587
+2021,127,Minnesota Wild,Josh Pillar,RW,0,0.0
+2021,128,Vegas Golden Knights,Jakub Demek,C,0,0.0
+2021,129,New Jersey Devils,Topias Vilen,D,2,-0.024758869050001
+2021,130,Anaheim Ducks,Sean Tschigerl,LW,0,0.0
+2021,131,Seattle Kraken,Jacob Melanson,RW,37,0.2168402560507336
+2021,132,Columbus Blue Jackets,Nikolai Makarov,D,0,0.0
+2021,133,Columbus Blue Jackets,James Malatesta,LW,13,0.3003753437451064
+2021,134,Detroit Red Wings,Liam Dower Nilsson,C,0,0.0
+2021,135,San Jose Sharks,Artem Guryev,D,0,0.0
+2021,136,Carolina Hurricanes,Robert Orr,RW,0,0.0
+2021,137,Vancouver Canucks,Aku Koskenvuo,G,0,0.0
+2021,138,Dallas Stars,Jack Bar,D,0,0.0
+2021,139,Arizona Coyotes,Manix Landry,C,0,0.0
+2021,140,Vancouver Canucks,Jonathan Myrenberg,D,0,0.0
+2021,141,Calgary Flames,Cole Jordan,D,0,0.0
+2021,142,Montréal Canadiens,Daniil Sobolev,D,0,0.0
+2021,143,Dallas Stars,Jacob Holmes,D,0,0.0
+2021,144,New York Rangers,Jaroslav Chmelar,RW,28,0.5576443056408633
+2021,145,St. Louis Blues,Tyson Galloway,D,0,0.0
+2021,146,Winnipeg Jets,Dmitri Rashevsky,RW,0,0.0
+2021,147,Carolina Hurricanes,Justin Robidas,C,4,0.2933582508639496
+2021,148,Anaheim Ducks,Gage Alexander,G,0,0.0
+2021,149,Boston Bruins,Oskar Jellvik,LW,0,0.0
+2021,150,Montréal Canadiens,Joshua Roy,RW,38,1.2267380993099424
+2021,151,Washington Capitals,Haakon Hanelt,C,0,0.0
+2021,152,Florida Panthers,Kirill Gerasimyuk,G,0,0.0
+2021,153,Toronto Maple Leafs,Ty Voit,LW,0,0.0
+2021,154,Pittsburgh Penguins,Isaac Belliveau,D,0,0.0
+2021,155,Detroit Red Wings,Oscar Plandowski,D,0,0.0
+2021,156,San Jose Sharks,Max McCue,C,0,0.0
+2021,157,New York Islanders,Eetu Liukas,LW,0,0.0
+2021,158,Philadelphia Flyers,Ty Murchison,D,3,-0.0165882475220888
+2021,159,Buffalo Sabres,Viljami Marjala,LW,0,0.0
+2021,160,Tampa Bay Lightning,Cameron Macdonald,C,0,0.0
+2021,161,Buffalo Sabres,William Von Barnekow Lofberg,C,0,0.0
+2021,162,Anaheim Ducks,Kyle Kukkonen,C,0,0.0
+2021,163,Seattle Kraken,Semyon Vyazovoi,G,0,0.0
+2021,164,New Jersey Devils,Viktor Hurtig,D,0,0.0
+2021,165,Columbus Blue Jackets,Ben Boyd,LW,0,0.0
+2021,166,Detroit Red Wings,Pasquale Zito,LW,0,0.0
+2021,167,San Jose Sharks,Liam Gilmartin,LW,0,0.0
+2021,168,Calgary Flames,Jack Beck,RW,0,0.0
+2021,169,Vancouver Canucks,Hugo Gabrielson,D,0,0.0
+2021,170,Carolina Hurricanes,Bryce Montgomery,D,0,0.0
+2021,171,Arizona Coyotes,Cal Thomas,D,0,0.0
+2021,172,Chicago Blackhawks,Ilya Safonov,C,0,0.0
+2021,173,Calgary Flames,Lucas Ciona,LW,0,0.0
+2021,174,Philadelphia Flyers,Ethan Samson,D,0,0.0
+2021,175,Dallas Stars,Francesco Arcuri,C,0,0.0
+2021,176,Washington Capitals,Dru Krebs,D,0,0.0
+2021,177,San Jose Sharks,Theo Jacobsson,C,0,0.0
+2021,178,Vancouver Canucks,Connor Lockhart,RW,0,0.0
+2021,179,Nashville Predators,Simon Knak,LW,0,0.0
+2021,180,Edmonton Oilers,Matvey Petrov,LW,0,0.0
+2021,181,Boston Bruins,Ryan Mast,D,0,0.0
+2021,182,Minnesota Wild,Nate Benoit,D,0,0.0
+2021,183,Washington Capitals,Chase Clark,G,0,0.0
+2021,184,Florida Panthers,Jakub Kos,LW,0,0.0
+2021,185,Toronto Maple Leafs,Vyacheslav Peksa,G,0,0.0
+2021,186,Edmonton Oilers,Shane Lachance,LW,1,-0.024899035193964
+2021,187,Carolina Hurricanes,Nikita Quapp,G,0,0.0
+2021,188,Buffalo Sabres,Nikita Novikov,D,0,0.0
+2021,189,New York Islanders,Aleksi Malinen,D,0,0.0
+2021,190,Vegas Golden Knights,Artur Cholach,D,0,0.0
+2021,191,Montréal Canadiens,Xavier Simoneau,C,0,0.0
+2021,192,Tampa Bay Lightning,Alex Gagne,D,0,0.0
+2021,193,Buffalo Sabres,Tyson Kozak,C,67,0.6369601120957247
+2021,194,Pittsburgh Penguins,Ryan McCleary,D,0,0.0
+2021,195,Seattle Kraken,Justin Janicke,LW,0,0.0
+2021,196,Tampa Bay Lightning,Daniil Pylenkov,D,0,0.0
+2021,197,Columbus Blue Jackets,Martin Rysavy,RW,0,0.0
+2021,198,St. Louis Blues,Ivan Vorobyov,RW,0,0.0
+2021,199,San Jose Sharks,Evgenii Kashnikov,D,0,0.0
+2021,200,Carolina Hurricanes,Yegor Naumov,G,0,0.0
+2021,201,Vancouver Canucks,Lucas Forsell,LW,0,0.0
+2021,202,Ottawa Senators,Chandler Romeo,D,0,0.0
+2021,203,New Jersey Devils,Zakhar Bardakov,C,60,0.7536582326033334
+2021,204,Chicago Blackhawks,Connor Kelley,D,0,0.0
+2021,205,Calgary Flames,Arsenii Sergeev,G,1,0.0
+2021,206,Philadelphia Flyers,Owen McLaughlin,C,0,0.0
+2021,207,Dallas Stars,Albert Sjoberg,RW,0,0.0
+2021,208,New York Rangers,Hank Kempf,D,0,0.0
+2021,209,Carolina Hurricanes,Nikita Guslistov,C,0,0.0
+2021,210,Florida Panthers,Braden Hache,D,0,0.0
+2021,211,Tampa Bay Lightning,Cooper Flinton,LW,0,0.0
+2021,212,Edmonton Oilers,Maximus Wanner,D,0,0.0
+2021,213,Boston Bruins,Andre Gasseau,C,0,0.0
+2021,214,Montréal Canadiens,Joe Vrbetic,G,0,0.0
+2021,215,Pittsburgh Penguins,Daniel Laatsch,D,0,0.0
+2021,216,Chicago Blackhawks,Jalen Luypen,C,0,0.0
+2021,217,Boston Bruins,Ty Gallagher,D,0,0.0
+2021,218,Pittsburgh Penguins,Kirill Tankov,C,0,0.0
+2021,219,Carolina Hurricanes,Joel Nystrom,D,38,1.0327213495448244
+2021,220,Colorado Avalanche,Taylor Makar,LW,12,-0.2383225995243281
+2021,221,New York Islanders,Tomas Machu,D,0,0.0
+2021,222,Vegas Golden Knights,Carl Lindbom,G,8,0.0
+2021,223,Arizona Coyotes,Sam Lipkin,LW,0,0.0
+2021,224,Tampa Bay Lightning,Niko Huuhtanen,RW,0,0.0
+2022,1,Montréal Canadiens,Juraj Slafkovský,LW,282,19.643683220806185
+2022,2,New Jersey Devils,Simon Nemec,D,155,7.405888934097842
+2022,3,Arizona Coyotes,Logan Cooley,C,211,17.18421251258637
+2022,4,Seattle Kraken,Shane Wright,C,169,10.16131066220122
+2022,5,Philadelphia Flyers,Cutter Gauthier,LW,159,13.508398244487296
+2022,6,Columbus Blue Jackets,David Jiricek,D,85,1.3145802864381009
+2022,7,Chicago Blackhawks,Kevin Korchinski,D,105,2.863085690840493
+2022,8,Detroit Red Wings,Marco Kasper,C,159,6.870835843916015
+2022,9,Buffalo Sabres,Matt Savoie,C,87,3.2176299354174858
+2022,10,Anaheim Ducks,Pavel Mintyukov,D,204,7.522546140216648
+2022,11,Arizona Coyotes,Conor Geekie,C,66,0.6730528906441882
+2022,12,Columbus Blue Jackets,Denton Mateychuk,D,120,6.77776526930734
+2022,13,Chicago Blackhawks,Frank Nazar,C,122,8.400811277250629
+2022,14,Winnipeg Jets,Rutger McGroarty,RW,32,0.6799096202732926
+2022,15,Vancouver Canucks,Jonathan Lekkerimäki,RW,37,0.5196868284787368
+2022,16,Buffalo Sabres,Noah Ostlund,C,68,1.9368387272507477
+2022,17,Nashville Predators,Joakim Kemell,RW,18,0.1038895798275414
+2022,18,Dallas Stars,Lian Bichsel,D,88,0.165950585016381
+2022,19,Minnesota Wild,Liam Ohgren,LW,97,2.410424506314663
+2022,20,Washington Capitals,Ivan Miroshnichenko,LW,52,0.5825091309576104
+2022,21,Pittsburgh Penguins,Owen Pickering,D,29,0.1183546619355984
+2022,22,Anaheim Ducks,Nathan Gaucher,C,3,-0.0599677051513144
+2022,23,St. Louis Blues,Jimmy Snuggerud,RW,77,6.440005901656455
+2022,24,Minnesota Wild,Danila Yurov,RW,73,1.9829175857099668
+2022,25,Chicago Blackhawks,Sam Rinzel,D,63,2.6375112614100105
+2022,26,Montréal Canadiens,Filip Mesar,RW,0,0.0
+2022,27,San Jose Sharks,Filip Bystedt,C,0,0.0
+2022,28,Buffalo Sabres,Jiri Kulich,C,75,3.5107305107922815
+2022,29,Arizona Coyotes,Maveric Lamoureux,D,20,0.4895250928540601
+2022,30,Winnipeg Jets,Brad Lambert,C,31,0.4980575981999237
+2022,31,Tampa Bay Lightning,Isaac Howard,LW,29,0.1083158471658026
+2022,32,Edmonton Oilers,Reid Schaefer,LW,47,0.7692062260192338
+2022,33,Montréal Canadiens,Owen Beck,C,28,-0.0114126683940252
+2022,34,San Jose Sharks,Cameron Lund,C,0,0.0
+2022,35,Seattle Kraken,Jagger Firkus,RW,0,0.0
+2022,36,Arizona Coyotes,Artem Duda,D,0,0.0
+2022,37,Washington Capitals,Ryan Chesley,D,0,0.0
+2022,38,Toronto Maple Leafs,Fraser Minten,C,107,3.3574095524979457
+2022,39,Chicago Blackhawks,Paul Ludwinski,C,0,0.0
+2022,40,Detroit Red Wings,Dylan James,LW,0,0.0
+2022,41,Buffalo Sabres,Topias Leinonen,G,0,0.0
+2022,42,Anaheim Ducks,Noah Warren,D,0,0.0
+2022,43,Arizona Coyotes,Julian Lutz,LW,0,0.0
+2022,44,Columbus Blue Jackets,Luca Del Bel Belluz,C,30,0.8961016256253971
+2022,45,San Jose Sharks,Mattias Havelid,D,0,0.0
+2022,46,New Jersey Devils,Seamus Casey,D,16,0.6461896682738829
+2022,47,Minnesota Wild,Hunter Haight,C,9,0.0835775017417775
+2022,48,Vegas Golden Knights,Matyas Sapovaliv,C,0,0.0
+2022,49,Seattle Kraken,Jani Nyman,RW,40,1.074077475143976
+2022,50,Dallas Stars,Christian Kyrou,D,0,0.0
+2022,51,Los Angeles Kings,Jack Hughes,C,429,50.257379705602446
+2022,52,Detroit Red Wings,Dmitri Buchelnikov,LW,0,0.0
+2022,53,Anaheim Ducks,Tristan Luneau,D,14,0.469392093212241
+2022,54,Boston Bruins,Matthew Poitras,C,69,2.3677423550855177
+2022,55,Winnipeg Jets,Elias Salomonsson,D,32,0.5711890801979584
+2022,56,Minnesota Wild,Rieger Lorenz,LW,0,0.0
+2022,57,Chicago Blackhawks,Ryan Greene,C,83,3.3025142224926705
+2022,58,Seattle Kraken,Niklas Kokko,G,0,0.0
+2022,59,Calgary Flames,Topi Ronni,C,0,0.0
+2022,60,Carolina Hurricanes,Gleb Trikozov,LW,0,0.0
+2022,61,Seattle Kraken,David Goyette,C,0,0.0
+2022,62,Montréal Canadiens,Lane Hutson,D,166,13.174287187675594
+2022,63,New York Rangers,Adam Sykora,LW,11,0.4912152151734245
+2022,64,Ottawa Senators,Filip Nordberg,D,0,0.0
+2022,65,New York Islanders,Calle Odelius,D,0,0.0
+2022,66,Chicago Blackhawks,Gavin Hayes,LW,0,0.0
+2022,67,Arizona Coyotes,Miko Matikka,RW,0,0.0
+2022,68,Seattle Kraken,Ty Nelson,D,0,0.0
+2022,69,Philadelphia Flyers,Devin Kaplan,RW,1,-0.0277612183020725
+2022,70,Washington Capitals,Alexander Suzdalev,LW,0,0.0
+2022,71,Carolina Hurricanes,Alexander Perevalov,LW,0,0.0
+2022,72,Ottawa Senators,Oskar Pettersson,RW,0,0.0
+2022,73,St. Louis Blues,Aleksanteri Kaskimaki,C,5,-0.0632071735171313
+2022,74,Buffalo Sabres,Viktor Neuchev,LW,0,0.0
+2022,75,Montréal Canadiens,Vinzenz Rohrer,C,0,0.0
+2022,76,San Jose Sharks,Michael Fisher,D,0,0.0
+2022,77,Winnipeg Jets,Danil Zhilkin,C,6,0.0264842636615832
+2022,78,New York Islanders,Quinn Finley,LW,0,0.0
+2022,79,Vegas Golden Knights,Jordan Gustafson,C,0,0.0
+2022,80,Vancouver Canucks,Elias Pettersson,D,98,2.2484532473496417
+2022,81,Chicago Blackhawks,Samuel Savoie,LW,0,0.0
+2022,82,Nashville Predators,Adam Ingram,C,0,0.0
+2022,83,Dallas Stars,George Fegaras,D,0,0.0
+2022,84,Nashville Predators,Kasper Kulonummi,D,0,0.0
+2022,85,Washington Capitals,Ludwig Persson,LW,0,0.0
+2022,86,Tampa Bay Lightning,Lucas Edmonds,RW,0,0.0
+2022,87,Ottawa Senators,Tomas Hamara,D,0,0.0
+2022,88,St. Louis Blues,Michael Buchinger,D,0,0.0
+2022,89,Minnesota Wild,Michael Milne,LW,1,-0.027847847465355
+2022,90,Chicago Blackhawks,Aidan Thompson,C,0,0.0
+2022,91,Seattle Kraken,Ben MacDonald,C,0,0.0
+2022,92,Montréal Canadiens,Adam Engstrom,D,15,-0.0660719196008772
+2022,93,Florida Panthers,Marek Alscher,D,4,0.3416294580420151
+2022,94,Arizona Coyotes,Jeremy Langlois,D,0,0.0
+2022,95,Toronto Maple Leafs,Nicholas Moldenhauer,RW,0,0.0
+2022,96,Columbus Blue Jackets,Jordan Dumais,RW,0,0.0
+2022,97,New York Rangers,Bryce McConnell-Barker,C,0,0.0
+2022,98,New York Islanders,Isaiah George,D,37,0.7558316305870301
+2022,99,Winnipeg Jets,Garrett Brown,D,0,0.0
+2022,100,Seattle Kraken,Tyson Jugnauth,D,0,0.0
+2022,101,Carolina Hurricanes,Simon Forsmark,D,0,0.0
+2022,102,New Jersey Devils,Tyler Brennan,G,0,0.0
+2022,103,Los Angeles Kings,Kenny Connors,C,2,-0.0268662248178949
+2022,104,Ottawa Senators,Stephen Halliday,C,30,0.9313391399297226
+2022,105,Detroit Red Wings,Anton Johansson,D,0,0.0
+2022,106,Buffalo Sabres,Mats Lindgren,D,0,0.0
+2022,107,Anaheim Ducks,Ben King,C,0,0.0
+2022,108,San Jose Sharks,Mason Beaupit,G,0,0.0
+2022,109,Columbus Blue Jackets,Kirill Dolzhenkov,RW,0,0.0
+2022,110,New Jersey Devils,Daniil Orlov,D,0,0.0
+2022,111,New York Rangers,Noah Laba,C,74,2.828044189043303
+2022,112,Vancouver Canucks,Daimon Gardner,C,0,0.0
+2022,113,Detroit Red Wings,Amadeus Lombardi,C,0,0.0
+2022,114,Nashville Predators,Cole O'Hara,RW,1,0.0927631528904265
+2022,115,Dallas Stars,Gavin White,D,0,0.0
+2022,116,Los Angeles Kings,Angus Booth,D,1,0.1546231819483179
+2022,117,Boston Bruins,Cole Spicer,C,0,0.0
+2022,118,Pittsburgh Penguins,Sergei Murashov,G,5,0.0
+2022,119,Boston Bruins,Dans Locmelis,C,0,0.0
+2022,120,St. Louis Blues,Arseni Koromyslov,D,0,0.0
+2022,121,Minnesota Wild,Ryan Healey,D,0,0.0
+2022,122,Toronto Maple Leafs,Dennis Hildeby,G,26,0.0
+2022,123,Seattle Kraken,Tucker Robertson,C,0,0.0
+2022,124,Carolina Hurricanes,Cruz Lucius,RW,0,0.0
+2022,125,Florida Panthers,Ludvig Jansson,D,4,0.125946678524611
+2022,126,New Jersey Devils,Charlie Leddy,D,0,0.0
+2022,127,Montréal Canadiens,Cedrick Guindon,LW,0,0.0
+2022,128,Vegas Golden Knights,Cameron Whitehead,G,0,0.0
+2022,129,Detroit Red Wings,Maximilian Kilpinen,LW,0,0.0
+2022,130,Montréal Canadiens,Jared Davidson,C,10,-0.0767783138894678
+2022,131,Arizona Coyotes,Matthew Morden,D,0,0.0
+2022,132,Boston Bruins,Frederic Brunet,D,1,0.0723957001088601
+2022,133,Philadelphia Flyers,Alex Bump,LW,17,0.7893560253459732
+2022,134,Buffalo Sabres,Vsevolod Komarov,D,0,0.0
+2022,135,Toronto Maple Leafs,Nikita Grebenkin,RW,62,1.1159027581349383
+2022,136,Ottawa Senators,Jorian Donovan,D,2,-0.0250003960594709
+2022,137,Detroit Red Wings,Tnias Mathurin,D,0,0.0
+2022,138,Columbus Blue Jackets,Sergei Ivanov,G,0,0.0
+2022,139,Anaheim Ducks,Connor Hvidston,LW,0,0.0
+2022,140,San Jose Sharks,Jake Furlong,D,0,0.0
+2022,141,New Jersey Devils,Petr Hauser,RW,0,0.0
+2022,142,New York Islanders,Matthew Maggio,RW,0,0.0
+2022,143,Ottawa Senators,Cameron O'Neill,RW,0,0.0
+2022,144,Vancouver Canucks,Ty Young,G,0,0.0
+2022,145,Vegas Golden Knights,Patrick Guay,C,0,0.0
+2022,146,Nashville Predators,Graham Sward,D,0,0.0
+2022,147,Dallas Stars,Maxim Mayorov,G,0,0.0
+2022,148,Los Angeles Kings,Otto Salin,D,0,0.0
+2022,149,Washington Capitals,Jake Karabela,C,0,0.0
+2022,150,Pittsburgh Penguins,Zam Plante,C,0,0.0
+2022,151,Ottawa Senators,Kevin Reidler,G,0,0.0
+2022,152,St. Louis Blues,Marc-Andre Gaudet,D,0,0.0
+2022,153,Minnesota Wild,David Spacek,D,2,-0.0053380533124142
+2022,154,Anaheim Ducks,Michael Callow,RW,0,0.0
+2022,155,Calgary Flames,Parker Bell,LW,0,0.0
+2022,156,Carolina Hurricanes,Vladimir Grudinin,D,0,0.0
+2022,157,Florida Panthers,Sandis Vilmanis,LW,19,0.4107886949565613
+2022,158,Edmonton Oilers,Samuel Jonsson,G,0,0.0
+2022,159,New York Rangers,Victor Mancini,D,55,1.646629884074176
+2022,160,Tampa Bay Lightning,Nick Malik,G,0,0.0
+2022,161,New York Rangers,Maxim Barbashev,LW,0,0.0
+2022,162,Montréal Canadiens,Emmett Croteau,G,0,0.0
+2022,163,Arizona Coyotes,Maksymilian Szuber,D,1,-0.0022111477879228
+2022,164,Seattle Kraken,Barrett Hall,C,0,0.0
+2022,165,Philadelphia Flyers,Hunter McDonald,D,1,0.1020627685101706
+2022,166,New Jersey Devils,Josh Filmon,LW,0,0.0
+2022,167,Pittsburgh Penguins,Nolan Collins,D,0,0.0
+2022,168,Ottawa Senators,Theo Wallberg,D,0,0.0
+2022,169,Los Angeles Kings,Jared Wright,RW,23,-0.0857607752590714
+2022,170,Buffalo Sabres,Jake Richard,RW,0,0.0
+2022,171,Carolina Hurricanes,Jakub Vondras,G,0,0.0
+2022,172,San Jose Sharks,Joey Muldowney,RW,0,0.0
+2022,173,Chicago Blackhawks,Dominic James,C,43,1.0906605237566698
+2022,174,New York Islanders,Daylan Kuefler,LW,0,0.0
+2022,175,Winnipeg Jets,Fabian Wagner,C,0,0.0
+2022,176,Vancouver Canucks,Jackson Dorrington,D,0,0.0
+2022,177,Vegas Golden Knights,Ben Hemmerling,RW,0,0.0
+2022,178,Anaheim Ducks,Vyacheslav Buteyets,G,1,0.0
+2022,179,Dallas Stars,Matthew Seminoff,RW,0,0.0
+2022,180,Los Angeles Kings,Jack Sparkes,D,0,0.0
+2022,181,Washington Capitals,Ryan Hofer,RW,0,0.0
+2022,182,Pittsburgh Penguins,Luke Devlin,C,0,0.0
+2022,183,Boston Bruins,Reid Dyck,G,0,0.0
+2022,184,St. Louis Blues,Landon Sim,RW,0,0.0
+2022,185,Minnesota Wild,Servac Petrovsky,C,0,0.0
+2022,186,Florida Panthers,Josh Davies,LW,0,0.0
+2022,187,Buffalo Sabres,Gustav Karlsson,C,0,0.0
+2022,188,Chicago Blackhawks,Nils Juntorp,RW,0,0.0
+2022,189,Florida Panthers,Tyler Muszelik,G,0,0.0
+2022,190,Edmonton Oilers,Nikita Yevseyev,D,0,0.0
+2022,191,New York Rangers,Zakary Karpa,C,0,0.0
+2022,192,Tampa Bay Lightning,Connor Kurth,RW,0,0.0
+2022,193,Colorado Avalanche,Chris Romaine,D,0,0.0
+2022,194,Montréal Canadiens,Petteri Nurmi,D,0,0.0
+2022,195,San Jose Sharks,Eli Barnett,D,0,0.0
+2022,196,Seattle Kraken,Kyle Jackson,C,0,0.0
+2022,197,Philadelphia Flyers,Santeri Sulku,LW,0,0.0
+2022,198,New Jersey Devils,Artem Barabosha,D,0,0.0
+2022,199,Chicago Blackhawks,Riku Tohila,C,0,0.0
+2022,200,Boston Bruins,Jackson Edward,D,0,0.0
+2022,201,Detroit Red Wings,Owen Mehlenbacher,C,0,0.0
+2022,202,Buffalo Sabres,Joel Ratkovic Berndtsson,RW,0,0.0
+2022,203,Columbus Blue Jackets,James Fisher,RW,0,0.0
+2022,204,Arizona Coyotes,Adam Zlnka,RW,0,0.0
+2022,205,Carolina Hurricanes,Alexander Pelevin,D,0,0.0
+2022,206,Ottawa Senators,Tyson Dyck,C,0,0.0
+2022,207,Winnipeg Jets,Domenic DiVincentiis,G,0,0.0
+2022,208,Vancouver Canucks,Kirill Kudryavtsev,D,5,0.2265524102515033
+2022,209,Vegas Golden Knights,Abram Wiebe,D,4,-0.0584971889668593
+2022,210,Nashville Predators,Ben Strinden,C,0,0.0
+2022,211,Buffalo Sabres,Linus Sjodin,C,0,0.0
+2022,212,Detroit Red Wings,Brennan Ali,C,0,0.0
+2022,213,Washington Capitals,David Gucciardi,D,0,0.0
+2022,214,Florida Panthers,Liam Arnsby,C,0,0.0
+2022,215,Los Angeles Kings,Kaleb Lawrence,RW,0,0.0
+2022,216,Montréal Canadiens,Miguël Tourigny,D,0,0.0
+2022,217,San Jose Sharks,Reese Laubach,C,0,0.0
+2022,218,Toronto Maple Leafs,Brandon Lisowsky,LW,0,0.0
+2022,219,Calgary Flames,Cade Littler,C,0,0.0
+2022,220,Philadelphia Flyers,Alexis Gendron,RW,0,0.0
+2022,221,Florida Panthers,Jack Devine,RW,6,-0.1233606065482398
+2022,222,Edmonton Oilers,Joel Maatta,C,0,0.0
+2022,223,Tampa Bay Lightning,Dyllan Gill,D,0,0.0
+2022,224,Tampa Bay Lightning,Klavs Veinbergs,LW,0,0.0
+2022,225,Colorado Avalanche,Ivan Zhigalov,G,0,0.0
 2023,1,Chicago Blackhawks,Connor Bedard,C,219,24.215439230361067
 2023,2,Anaheim Ducks,Leo Carlsson,C,201,15.51221180594997
 2023,3,Columbus Blue Jackets,Adam Fantilli,C,213,17.81421569797277
 2023,4,San Jose Sharks,Will Smith,C,143,11.762620028570872
-2023,5,Montréal Canadiens,David Reinbacher,D,2,0.09819350840939114
+2023,5,Montréal Canadiens,David Reinbacher,D,2,0.0981935084093911
 2023,6,Arizona Coyotes,Dmitriy Simashev,D,0,0.0
 2023,7,Philadelphia Flyers,Matvei Michkov,RW,161,12.273098515679017
 2023,8,Washington Capitals,Ryan Leonard,RW,84,5.168238823973734
@@ -11,23 +459,23 @@ year,overall_pick,team,player,position,games_played,point_shares
 2023,10,St. Louis Blues,Dalibor Dvorsky,C,73,2.1117739828110658
 2023,11,Vancouver Canucks,Tom Willander,D,70,2.966097369909995
 2023,12,Arizona Coyotes,Daniil But,LW,29,0.6211024755091807
-2023,13,Buffalo Sabres,Zach Benson,LW,211,9.785806450796255
-2023,14,Pittsburgh Penguins,Brayden Yager,C,3,-0.07828308527738315
+2023,13,Buffalo Sabres,Zach Benson,LW,211,9.785806450796256
+2023,14,Pittsburgh Penguins,Brayden Yager,C,3,-0.0782830852773831
 2023,15,Nashville Predators,Matthew Wood,RW,77,3.3469040394168057
-2023,16,Calgary Flames,Samuel Honzek,LW,23,0.13397356167704078
+2023,16,Calgary Flames,Samuel Honzek,LW,23,0.1339735616770407
 2023,17,Detroit Red Wings,Axel Sandin-Pellikka,D,68,2.6296077530413893
 2023,18,Winnipeg Jets,Colby Barlow,LW,0,0.0
 2023,19,Chicago Blackhawks,Oliver Moore,C,60,1.923039663187766
 2023,20,Seattle Kraken,Eduard Sale,LW,0,0.0
 2023,21,Minnesota Wild,Charlie Stramel,C,0,0.0
-2023,22,Philadelphia Flyers,Oliver Bonk,D,1,0.22938364629806451
+2023,22,Philadelphia Flyers,Oliver Bonk,D,1,0.2293836462980645
 2023,23,New York Rangers,Gabe Perreault,RW,54,2.9045342594386176
 2023,24,Nashville Predators,Tanner Molendyk,D,0,0.0
 2023,25,St. Louis Blues,Otto Stenberg,C,32,0.7838598940246186
 2023,26,San Jose Sharks,Quentin Musty,LW,0,0.0
 2023,27,Colorado Avalanche,Calum Ritchie,C,72,3.507758830710696
 2023,28,Toronto Maple Leafs,Easton Cowan,RW,66,3.4309641523293424
-2023,29,St. Louis Blues,Theo Lindstein,D,17,0.39561028763507555
+2023,29,St. Louis Blues,Theo Lindstein,D,17,0.3956102876350755
 2023,30,Carolina Hurricanes,Bradly Nadeau,LW,15,0.3375525740596603
 2023,31,Colorado Avalanche,Mikhail Gulyayev,D,0,0.0
 2023,32,Vegas Golden Knights,David Edstrom,C,0,0.0
@@ -50,7 +498,7 @@ year,overall_pick,team,player,position,games_played,point_shares
 2023,49,New York Islanders,Danny Nelson,C,0,0.0
 2023,50,Seattle Kraken,Carson Rehkopf,LW,0,0.0
 2023,51,Philadelphia Flyers,Carson Bjarnason,G,0,0.0
-2023,52,Seattle Kraken,Oscar Fisker Molgaard,C,13,0.07199128737064192
+2023,52,Seattle Kraken,Oscar Fisker Molgaard,C,13,0.0719912873706419
 2023,53,Minnesota Wild,Rasmus Kumpulainen,C,0,0.0
 2023,54,Los Angeles Kings,Jakub Dvorak,D,0,0.0
 2023,55,Chicago Blackhawks,Martin Misiak,RW,0,0.0
@@ -60,12 +508,12 @@ year,overall_pick,team,player,position,games_played,point_shares
 2023,59,Anaheim Ducks,Carey Terrance,C,0,0.0
 2023,60,Anaheim Ducks,Damian Clara,G,0,0.0
 2023,61,Dallas Stars,Tristan Bertucci,D,0,0.0
-2023,62,Carolina Hurricanes,Felix Unger Sorum,RW,1,0.11621997082777061
+2023,62,Carolina Hurricanes,Felix Unger Sorum,RW,1,0.1162199708277706
 2023,63,Florida Panthers,Gracyn Sawchyn,C,0,0.0
 2023,64,Minnesota Wild,Riley Heidt,C,0,0.0
 2023,65,Anaheim Ducks,Coulson Pitre,RW,0,0.0
 2023,66,Columbus Blue Jackets,William Whitelaw,RW,0,0.0
-2023,67,Chicago Blackhawks,Nick Lardis,LW,41,1.5264970915282419
+2023,67,Chicago Blackhawks,Nick Lardis,LW,41,1.526497091528242
 2023,68,Nashville Predators,Jesse Kiiskinen,RW,0,0.0
 2023,69,Montréal Canadiens,Jacob Fowler,G,17,0.0
 2023,70,Arizona Coyotes,Jonathan Castagna,C,0,0.0
@@ -78,7 +526,7 @@ year,overall_pick,team,player,position,games_played,point_shares
 2023,77,Vegas Golden Knights,Mathieu Cataford,C,0,0.0
 2023,78,Los Angeles Kings,Koehn Ziemmer,RW,0,0.0
 2023,79,Dallas Stars,Brad Gardiner,C,0,0.0
-2023,80,Calgary Flames,Aydar Suniev,LW,7,0.006100110636253792
+2023,80,Calgary Flames,Aydar Suniev,LW,7,0.0061001106362537
 2023,81,Arizona Coyotes,Tanner Ludtke,C,0,0.0
 2023,82,Winnipeg Jets,Zach Nehring,RW,0,0.0
 2023,83,Nashville Predators,Dylan MacKinnon,D,0,0.0
@@ -99,11 +547,11 @@ year,overall_pick,team,player,position,games_played,point_shares
 2023,98,Columbus Blue Jackets,Andrew Strathmann,D,0,0.0
 2023,99,Chicago Blackhawks,Alex Pharand,C,0,0.0
 2023,100,Carolina Hurricanes,Alexander Rykov,RW,0,0.0
-2023,101,Montréal Canadiens,Florian Xhekaj,LW,5,0.08542839664009635
+2023,101,Montréal Canadiens,Florian Xhekaj,LW,5,0.0854283966400963
 2023,102,Arizona Coyotes,Terrell Goldsmith,D,0,0.0
 2023,103,Philadelphia Flyers,Cole Knuble,C,0,0.0
 2023,104,Washington Capitals,Patrick Thomas,C,0,0.0
-2023,105,Vancouver Canucks,Ty Mueller,C,8,0.13437567082258065
+2023,105,Vancouver Canucks,Ty Mueller,C,8,0.1343756708225806
 2023,106,St. Louis Blues,Jakub Stancl,C,0,0.0
 2023,107,Vancouver Canucks,Vilmer Alriksson,LW,0,0.0
 2023,108,Ottawa Senators,Hoyt Stanley,D,0,0.0
@@ -112,7 +560,7 @@ year,overall_pick,team,player,position,games_played,point_shares
 2023,111,Nashville Predators,Joey Willis,C,0,0.0
 2023,112,Calgary Flames,Jaden Lipinski,C,0,0.0
 2023,113,New York Islanders,Jesse Nurmi,LW,0,0.0
-2023,114,Columbus Blue Jackets,Luca Pinelli,C,3,-0.03868476334588038
+2023,114,Columbus Blue Jackets,Luca Pinelli,C,3,-0.0386847633458803
 2023,115,Tampa Bay Lightning,Jayson Shaugabay,RW,0,0.0
 2023,116,Seattle Kraken,Andrei Loshko,C,0,0.0
 2023,117,Detroit Red Wings,Larry Keenan,D,0,0.0
@@ -234,12 +682,12 @@ year,overall_pick,team,player,position,games_played,point_shares
 2024,10,New Jersey Devils,Anton Silayev,D,0,0.0
 2024,11,San Jose Sharks,Sam Dickinson,D,72,2.036006363187275
 2024,12,Minnesota Wild,Zeev Buium,D,76,3.260111240690845
-2024,13,Philadelphia Flyers,Jett Luchanko,C,8,-0.22073234394808738
+2024,13,Philadelphia Flyers,Jett Luchanko,C,8,-0.2207323439480873
 2024,14,Buffalo Sabres,Konsta Helenius,C,9,0.2104821950933452
 2024,15,Detroit Red Wings,Michael Brandsegg-Nygård,RW,0,0.0
 2024,16,St. Louis Blues,Adam Jiricek,D,0,0.0
 2024,17,Washington Capitals,Terik Parascak,RW,0,0.0
-2024,18,Chicago Blackhawks,Sacha Boisvert,C,7,0.11450421875675346
+2024,18,Chicago Blackhawks,Sacha Boisvert,C,7,0.1145042187567534
 2024,19,Vegas Golden Knights,Trevor Connelly,LW,0,0.0
 2024,20,New York Islanders,Cole Eiserman,LW,0,0.0
 2024,21,Montréal Canadiens,Michael Hage,C,0,0.0
@@ -265,7 +713,7 @@ year,overall_pick,team,player,position,games_played,point_shares
 2024,41,Calgary Flames,Andrew Basha,LW,0,0.0
 2024,42,Buffalo Sabres,Adam Kleber,D,0,0.0
 2024,43,Washington Capitals,Cole Hutson,D,14,1.0425806044916723
-2024,44,Pittsburgh Penguins,Harrison Brunicke,D,9,0.26658113690463764
+2024,44,Pittsburgh Penguins,Harrison Brunicke,D,9,0.2665811369046376
 2024,45,Minnesota Wild,Ryder Ritchie,RW,0,0.0
 2024,46,Pittsburgh Penguins,Tanner Howe,LW,0,0.0
 2024,47,Detroit Red Wings,Max Plante,LW,0,0.0
@@ -381,7 +829,7 @@ year,overall_pick,team,player,position,games_played,point_shares
 2024,157,Toronto Maple Leafs,Timofei Obvintsev,G,0,0.0
 2024,158,Dallas Stars,Niilopekka Muhonen,D,0,0.0
 2024,159,New York Rangers,Nathan Aspinall,LW,0,0.0
-2024,160,Edmonton Oilers,Connor Clattenburg,LW,5,0.12742906696078676
+2024,160,Edmonton Oilers,Connor Clattenburg,LW,5,0.1274290669607867
 2024,161,Colorado Avalanche,Maxmilian Curran,C,0,0.0
 2024,162,Vancouver Canucks,Anthony Romani,RW,0,0.0
 2024,163,Chicago Blackhawks,Ty Henry,D,0,0.0
@@ -438,7 +886,7 @@ year,overall_pick,team,player,position,games_played,point_shares
 2024,214,Anaheim Ducks,Darels Uljanskis,D,0,0.0
 2024,215,Colorado Avalanche,Christian Humphreys,C,0,0.0
 2024,216,Toronto Maple Leafs,Sam McCue,LW,0,0.0
-2024,217,Colorado Avalanche,Nikita Prishchepov,C,10,-0.17591415753791015
+2024,217,Colorado Avalanche,Nikita Prishchepov,C,10,-0.1759141575379101
 2024,218,Edmonton Oilers,Bauer Berry,D,0,0.0
 2024,219,Buffalo Sabres,Ryerson Leenders,G,0,0.0
 2024,220,Carolina Hurricanes,Andrey Krutov,LW,0,0.0
@@ -451,9 +899,9 @@ year,overall_pick,team,player,position,games_played,point_shares
 2025,2,San Jose Sharks,Michael Misa,C,45,2.233167926962889
 2025,3,Chicago Blackhawks,Anton Frondell,C,12,1.0872857877177506
 2025,4,Utah Mammoth,Caleb Desnoyers,C,0,0.0
-2025,5,Nashville Predators,Brady Martin,C,3,0.08340051051808095
+2025,5,Nashville Predators,Brady Martin,C,3,0.0834005105180809
 2025,6,Philadelphia Flyers,Porter Martone,RW,9,0.9929775706432644
-2025,7,Boston Bruins,James Hagens,C,2,0.04720643124168019
+2025,7,Boston Bruins,James Hagens,C,2,0.0472064312416801
 2025,8,Seattle Kraken,Jake O'Brien,C,0,0.0
 2025,9,Buffalo Sabres,Radim Mrtka,D,0,0.0
 2025,10,Anaheim Ducks,Roger McQueen,C,0,0.0
@@ -461,7 +909,7 @@ year,overall_pick,team,player,position,games_played,point_shares
 2025,12,Philadelphia Flyers,Jack Nesbitt,C,0,0.0
 2025,13,Detroit Red Wings,Carter Bear,LW,0,0.0
 2025,14,Columbus Blue Jackets,Jackson Smith,D,0,0.0
-2025,15,Vancouver Canucks,Braeden Cootes,C,3,-0.04004709375588256
+2025,15,Vancouver Canucks,Braeden Cootes,C,3,-0.0400470937558825
 2025,16,New York Islanders,Victor Eklund,RW,1,0.0741501283662635
 2025,17,New York Islanders,Kashawn Aitcheson,D,0,0.0
 2025,18,Calgary Flames,Cole Reschny,C,0,0.0

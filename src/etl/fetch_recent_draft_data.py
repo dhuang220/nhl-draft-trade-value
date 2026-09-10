@@ -1,5 +1,7 @@
-"""Fetch 2023+ NHL draft classes from the NHL's own draft-picks API (no Kaggle equivalent
-exists yet for these recent classes) and value each pick with our own trained value model.
+"""Fetch 2021+ NHL draft classes from the NHL's own draft-picks API and value each pick with
+our own trained value model. 2023+ has no Kaggle equivalent at all; 2021-2022 do exist in the
+Kaggle dataset but are an unusable pre-career snapshot there (point_shares/games_played are
+NaN for essentially the whole 2022 class), so they're replaced with this same live fetch too.
 
 point_shares in the output is NOT the real Hockey-Reference stat the Kaggle-sourced rows
 carry - real career Point Shares doesn't exist yet for these mostly-not-yet-NHL players. It's
@@ -83,7 +85,7 @@ def predicted_career_value(player_name: str, model, medians: dict) -> tuple[floa
     return total_value, total_gp
 
 
-def fetch_recent_draft_data(start_year: int = 2023, end_year: int | None = None) -> pd.DataFrame:
+def fetch_recent_draft_data(start_year: int = 2021, end_year: int | None = None) -> pd.DataFrame:
     end_year = end_year or date.today().year
     model = joblib.load(PROCESSED_DIR / "value_model.joblib")
     medians = _feature_medians()
