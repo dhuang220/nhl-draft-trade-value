@@ -1,22 +1,26 @@
 """Grade an NHL trade by summing the value each side acquired.
 
-Every asset is valued through one of three paths, in order of confidence:
+Every asset is valued through one of four paths, in order of confidence:
 1. Season-matched player value - the trade happened in 2016-17, so we have the
-   real composite value model output for that player that season. High confidence.
-2. Live player value - a hypothetical/future trade; current-season stats are
-   pulled from the NHL API and run through the same trained value model. Medium
-   confidence (missing possession/xG inputs are imputed with the training median).
-3. Career draft-value fallback - any other historical trade. We don't have
-   season-by-season stats for most of NHL history, so we fall back to the
-   player's career Point Shares from the draft dataset. Low confidence: it
-   values a player as "their whole career," not "how good they were at the
-   moment of this specific trade" - a real, documented simplification.
+   real composite value model output for that player that season, computed
+   locally with no network call. High confidence.
+2. Season-specific live value - any other historical trade, or a hypothetical/
+   future one. That player's actual stats for the relevant season (or their
+   current season, for a hypothetical trade) are pulled from the NHL API and
+   run through the same trained value model. Medium confidence (missing
+   possession/xG inputs are imputed with the training median).
+3. Career draft-value fallback - the season-specific lookup found no NHL
+   record for that player in that season (too old for the league's digitized
+   records, a name that doesn't resolve, etc.). Falls back to the player's
+   career Point Shares from the draft dataset. Low confidence: it values a
+   player as "their whole career," not "how good they were at the moment of
+   this specific trade" - a real, documented simplification of last resort.
+4. Unmatched - not found anywhere.
 
-If none of those resolve (player not found anywhere, or a bare cash/future-
-considerations asset with no dollar amount), the asset is left unvalued and
-reported separately rather than silently treated as zero - zero would say
-"this asset is worthless," which is a different (and false) claim from
-"we don't know."
+A bare cash/future-considerations asset with no dollar amount also lands here.
+Unvalued assets are reported separately rather than silently treated as zero -
+zero would say "this asset is worthless," which is a different (and false)
+claim from "we don't know."
 """
 
 from dataclasses import dataclass, field
@@ -27,7 +31,12 @@ import joblib
 import numpy as np
 import pandas as pd
 
-from src.etl.fetch_current_stats import PlayerNotFoundError, fetch_current_player_stats
+from src.etl.fetch_current_stats import (
+    PlayerNotFoundError,
+    SeasonNotFoundError,
+    fetch_current_player_stats,
+    fetch_player_season_stats,
+)
 from src.features.value_features import FEATURE_COLUMNS, RATE_STATS
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
@@ -122,15 +131,10 @@ class TradeGrader:
             return AssetValue(name, float(self._draft_career_values[name]), "low", "career draft Point Shares")
         return AssetValue(name, None, "none", "unmatched")
 
-    def value_player_live(self, name: str) -> AssetValue:
-        try:
-            stats = fetch_current_player_stats(name)
-        except PlayerNotFoundError:
-            return self.value_player_career_fallback(name)
-
+    def _value_from_stats(self, name: str, stats: dict, source: str) -> AssetValue:
         if stats.get("GP") in (None, 0) or stats.get("position_group") == "G":
-            # No games this season (injured/hasn't debuted) or a goalie - out of
-            # this model's scope either way (see train_value_model.py docstring).
+            # No games that season (injured/hasn't debuted/didn't play) or a goalie -
+            # out of this model's scope either way (see train_value_model.py docstring).
             return self.value_player_career_fallback(name)
 
         row = {"age": stats["age"], "GP": stats["GP"], "was_drafted": stats["was_drafted"],
@@ -145,9 +149,25 @@ class TradeGrader:
         X = pd.DataFrame([row])[FEATURE_COLUMNS]
         predicted_rate = self._value_model.predict(X)[0]
         return AssetValue(
-            name, float(predicted_rate * stats["GP"]), "medium", "live NHL API + value model",
-            image_url=stats.get("headshot"),
+            name, float(predicted_rate * stats["GP"]), "medium", source, image_url=stats.get("headshot"),
         )
+
+    def value_player_live(self, name: str) -> AssetValue:
+        try:
+            stats = fetch_current_player_stats(name)
+        except (PlayerNotFoundError, SeasonNotFoundError):
+            return self.value_player_career_fallback(name)
+        return self._value_from_stats(name, stats, "live NHL API + value model")
+
+    def value_player_season(self, name: str, season_id: int) -> AssetValue:
+        """Same idea as value_player_live, but for a specific past NHL season rather than
+        whichever is most recent - lets a historical trade outside 2016-17 be valued on that
+        player's real form at the time, instead of falling straight to career totals."""
+        try:
+            stats = fetch_player_season_stats(name, season_id)
+        except (PlayerNotFoundError, SeasonNotFoundError):
+            return self.value_player_career_fallback(name)
+        return self._value_from_stats(name, stats, f"NHL API season stats ({season_id}) + value model")
 
     # --- Pick valuation -------------------------------------------------------
 
@@ -185,11 +205,13 @@ class TradeGrader:
             grade = TradeSideGrade(team=team)
             for _, row in side_rows.iterrows():
                 if row["type"] == "player":
-                    asset = (
-                        self.value_player_2016_17(row["name"])
-                        if season == "2016-17"
-                        else self.value_player_career_fallback(row["name"])
-                    )
+                    if season == "2016-17":
+                        # Already have the trained model's exact output for this
+                        # season locally - no need to hit the live API for it.
+                        asset = self.value_player_2016_17(row["name"])
+                    else:
+                        season_id = trade_year * 10000 + (trade_year + 1)
+                        asset = self.value_player_season(row["name"], season_id)
                 elif row["type"] == "pick":
                     asset = self.value_pick(
                         row["pick_year"], row["pick_round"], row["pick_overall"], bool(row["is_conditional"]), trade_year

@@ -1,6 +1,7 @@
-"""Fetch current-season stats for a live NHL player from the NHL's public api-web.nhle.com
-API, so the Trade Grader can value hypothetical trades built from today's rosters, not just
-the 2016-17 training season.
+"""Fetch NHL player stats from the public api-web.nhle.com API - both "right now" (for
+valuing hypothetical/future trades) and any specific past season (for valuing historical
+trades outside the 2016-17 training season), so the Trade Grader isn't limited to a single
+season's worth of high-confidence player values.
 
 The NHL API has no equivalent to MoneyPuck's possession/expected-goals numbers - CF, CA, xGF,
 and xGA always come back None here. Callers should impute those (e.g. with the training-set
@@ -22,6 +23,24 @@ class PlayerNotFoundError(Exception):
     pass
 
 
+class SeasonNotFoundError(Exception):
+    pass
+
+
+def _get_json(url: str, params: dict | None = None, retries: int = 3, delay: float = 0.5) -> dict:
+    """Retries with backoff on a 429 (the NHL API returns an HTML challenge page, not JSON,
+    when rate limited) - needed once the Trade Grader started making several live requests
+    per historical trade instead of just a couple per hypothetical one."""
+    for attempt in range(retries):
+        resp = requests.get(url, params=params, timeout=10)
+        if resp.status_code == 429:
+            time.sleep(delay * (2**attempt))
+            continue
+        resp.raise_for_status()
+        return resp.json()
+    resp.raise_for_status()
+
+
 def search_player_id(player_name: str) -> int:
     """Resolve a full player name to an NHL player ID via the search-index API.
 
@@ -29,11 +48,8 @@ def search_player_id(player_name: str) -> int:
     matching and happily returns an unrelated player (e.g. "Wayne Gretzky" -> "Wayne Savage")
     instead of nothing, so a loose match here would silently value the wrong player.
     """
-    resp = requests.get(
-        SEARCH_URL, params={"culture": "en-us", "limit": 10, "q": player_name}, timeout=10
-    )
-    resp.raise_for_status()
-    matches = [r for r in resp.json() if r["name"].lower() == player_name.lower()]
+    results = _get_json(SEARCH_URL, params={"culture": "en-us", "limit": 10, "q": player_name})
+    matches = [r for r in results if r["name"].lower() == player_name.lower()]
     if not matches:
         raise PlayerNotFoundError(f"No exact player match found for '{player_name}'")
 
@@ -49,18 +65,10 @@ def _season_end_year(season_id: int) -> int:
     return int(str(season_id)[4:])
 
 
-def fetch_current_player_stats(player_name: str) -> dict:
-    """Look up a player by name and return the FEATURE_COLUMNS fields the NHL API can supply.
-
-    Raises PlayerNotFoundError if the name doesn't resolve. Fields the API can't supply
-    (CF, CA, xGF, xGA - see module docstring) come back as None rather than a guessed value.
-    """
-    player_id = search_player_id(player_name)
-
-    resp = requests.get(LANDING_URL.format(player_id=player_id), timeout=10)
-    resp.raise_for_status()
-    landing = resp.json()
-
+def _build_stats(player_id: int, landing: dict, season_id: int, season_rows: list[dict]) -> dict:
+    """season_rows is EVERY regular-season NHL row for this season - usually one, but a
+    player traded mid-season gets a separate row per team, which must be summed rather than
+    just reading row 0 (that silently drops the games played after the trade)."""
     draft = landing.get("draftDetails")
     was_drafted = draft is not None
     # 0 / 300 match the undrafted-player encoding clean_value_training_data.py uses for the
@@ -68,24 +76,22 @@ def fetch_current_player_stats(player_name: str) -> dict:
     draft_round = draft["round"] if was_drafted else 0
     draft_overall = draft["overallPick"] if was_drafted else 300
 
-    featured = landing.get("featuredStats") or {}
-    season_id = featured.get("season")
-    reg_season = (featured.get("regularSeason") or {}).get("subSeason") or {}
-
     birth_year = int(landing["birthDate"].split("-")[0])
-    age = _season_end_year(season_id) - birth_year if season_id else None
+    age = _season_end_year(season_id) - birth_year
 
     position = landing.get("position")
     position_group = "D" if position == "D" else ("G" if position == "G" else "F")
+
+    games_played = sum(r.get("gamesPlayed") or 0 for r in season_rows)
 
     stats = {
         "player_id": player_id,
         "headshot": landing.get("headshot"),
         "age": age,
-        "GP": reg_season.get("gamesPlayed"),
-        "G": reg_season.get("goals"),
-        "A": reg_season.get("assists"),
-        "PIM": reg_season.get("pim"),
+        "GP": games_played,
+        "G": sum(r.get("goals") or 0 for r in season_rows),
+        "A": sum(r.get("assists") or 0 for r in season_rows),
+        "PIM": sum(r.get("pim") or 0 for r in season_rows),
         "iHF": None,
         "iGVA": None,
         "iTKA": None,
@@ -100,18 +106,19 @@ def fetch_current_player_stats(player_name: str) -> dict:
         "xGA": None,
     }
 
-    # Hits/giveaways/takeaways/blocks live in a separate "realtime" report, and it only covers
-    # skaters (goalies aren't in it), so skip the lookup for goalies.
-    if position_group != "G" and season_id:
-        rt_resp = requests.get(
-            REALTIME_URL,
-            params={"cayenneExp": f"seasonId={season_id} and playerId={player_id}"},
-            timeout=10,
-        )
-        rt_resp.raise_for_status()
-        rt_rows = rt_resp.json().get("data") or []
-        if rt_rows:
-            rt = rt_rows[0]
+    # Hits/giveaways/takeaways/blocks live in a separate "realtime" report. It already
+    # combines a mid-season trade into one row (unlike seasonTotals above), but also
+    # includes a separate playoffs row with no type field to distinguish them by - so the
+    # regular-season row is identified by matching its games played against the total
+    # already computed from seasonTotals, rather than assuming row order. Only covers
+    # skaters (goalies aren't in it) and only seasons the league has actually tracked this
+    # for (older seasons just come back empty, tolerated the same way CF/CA/xGF/xGA are).
+    if position_group != "G" and games_played:
+        rt_rows = _get_json(
+            REALTIME_URL, params={"cayenneExp": f"seasonId={season_id} and playerId={player_id}"}
+        ).get("data") or []
+        rt = next((r for r in rt_rows if r.get("gamesPlayed") == games_played), None)
+        if rt:
             stats["iHF"] = rt.get("hits")
             stats["iGVA"] = rt.get("giveaways")
             stats["iTKA"] = rt.get("takeaways")
@@ -120,19 +127,41 @@ def fetch_current_player_stats(player_name: str) -> dict:
     return stats
 
 
-def _get_json(url: str, retries: int = 3, delay: float = 0.5) -> dict:
-    """32 back-to-back team-roster requests trips the NHL API's rate limiting (a 429
-    with an HTML challenge page, not JSON) - a small delay plus backoff on 429 keeps
-    fetch_all_current_players() reliable without needing to slow every other call
-    in this module that only ever makes one or two requests at a time."""
-    for attempt in range(retries):
-        resp = requests.get(url, timeout=10)
-        if resp.status_code == 429:
-            time.sleep(delay * (2**attempt))
-            continue
-        resp.raise_for_status()
-        return resp.json()
-    resp.raise_for_status()
+def fetch_current_player_stats(player_name: str) -> dict:
+    """Look up a player by name and return the FEATURE_COLUMNS fields the NHL API can supply,
+    for their most recent season with data. Raises PlayerNotFoundError if the name doesn't
+    resolve."""
+    player_id = search_player_id(player_name)
+    landing = _get_json(LANDING_URL.format(player_id=player_id))
+
+    featured = landing.get("featuredStats") or {}
+    season_id = featured.get("season")
+    if not season_id:
+        raise SeasonNotFoundError(f"'{player_name}' has no current-season NHL data")
+    season_row = (featured.get("regularSeason") or {}).get("subSeason") or {}
+
+    return _build_stats(player_id, landing, season_id, [season_row])
+
+
+def fetch_player_season_stats(player_name: str, season_id: int) -> dict:
+    """Same as fetch_current_player_stats, but for a specific past NHL season (e.g. 20162017
+    for the 2016-17 season) rather than whichever season is most recent - lets the Trade
+    Grader value a historical trade using that player's real form at the time, not just their
+    career total. Raises PlayerNotFoundError if the name doesn't resolve, or
+    SeasonNotFoundError if this player has no NHL regular-season row for that season (they
+    weren't in the league yet, were in the minors/juniors that year, etc.)."""
+    player_id = search_player_id(player_name)
+    landing = _get_json(LANDING_URL.format(player_id=player_id))
+
+    season_rows = landing.get("seasonTotals") or []
+    matches = [
+        s for s in season_rows
+        if s.get("season") == season_id and s.get("leagueAbbrev") == "NHL" and s.get("gameTypeId") == 2
+    ]
+    if not matches:
+        raise SeasonNotFoundError(f"'{player_name}' has no NHL regular-season row for {season_id}")
+
+    return _build_stats(player_id, landing, season_id, matches)
 
 
 def fetch_team_logos() -> dict[str, str]:
@@ -164,3 +193,6 @@ if __name__ == "__main__":
             print(name, "->", fetch_current_player_stats(name))
         except PlayerNotFoundError as e:
             print(name, "-> NOT FOUND:", e)
+
+    print()
+    print("Martin Hanzal, 2016-17 season ->", fetch_player_season_stats("Martin Hanzal", 20162017))
