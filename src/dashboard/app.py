@@ -30,7 +30,51 @@ from src.trade.trade_grader import HypotheticalPick, TradeGrader, TradeSideGrade
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
 
-st.set_page_config(page_title="NHL Draft Value & Trade Grader", layout="wide")
+st.set_page_config(page_title="NHL Draft Value & Trade Grader", layout="wide", page_icon="🏒")
+
+CUSTOM_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');
+
+html, body, [class*="css"] { font-family: 'Manrope', sans-serif; }
+
+.hero-header {
+    background: linear-gradient(135deg, #1f4e79 0%, #4e79a7 100%);
+    padding: 1.75rem 2rem;
+    border-radius: 14px;
+    margin-bottom: 1.5rem;
+}
+.hero-header h1 {
+    color: #ffffff;
+    margin: 0;
+    font-weight: 800;
+    font-size: 2rem;
+    letter-spacing: -0.02em;
+}
+.hero-header p {
+    color: rgba(255,255,255,0.85);
+    margin: 0.35rem 0 0 0;
+    font-size: 1.02rem;
+}
+
+/* st.container(border=True) cards */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 14px !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+}
+
+.stTabs [data-baseweb="tab-list"] { gap: 6px; }
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px 8px 0 0;
+    padding: 10px 18px;
+    font-weight: 700;
+}
+
+div[data-testid="stMetricValue"] { font-weight: 800; }
+div[data-testid="stMetricLabel"] { font-weight: 600; opacity: 0.75; }
+</style>
+"""
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -263,13 +307,16 @@ def draft_explorer_tab():
         )
 
 
-def _render_side(grade: TradeSideGrade, team_logos: dict[str, str]):
+def _render_side(grade: TradeSideGrade, team_logos: dict[str, str], value_edge: float | None = None):
     with st.container(border=True):
         header_col, metric_col = st.columns([1, 3])
         logo_url = team_logos.get(grade.team)
         if logo_url:
             header_col.image(logo_url, width=56)
-        metric_col.metric(grade.team, f"{grade.total_value:+.2f}")
+        # value_edge is this side's total minus the other side's - shown as a delta so
+        # it's immediately visible which side "won" the trade, not just two flat numbers.
+        delta = f"{value_edge:+.2f} vs. other side" if value_edge is not None else None
+        metric_col.metric(grade.team, f"{grade.total_value:+.2f}", delta=delta)
 
         rows = [
             {"Photo": a.image_url, "Asset": a.label, "Value": a.value, "Confidence": a.confidence, "Source": a.source}
@@ -289,10 +336,12 @@ def _render_side(grade: TradeSideGrade, team_logos: dict[str, str]):
 
 def _render_grade_comparison(grades: dict[str, TradeSideGrade]):
     team_logos = load_team_logos()
+    totals = [g.total_value for g in grades.values()]
     cols = st.columns(len(grades))
-    for col, (_, grade) in zip(cols, grades.items()):
+    for col, (i, (_, grade)) in zip(cols, enumerate(grades.items())):
         with col:
-            _render_side(grade, team_logos)
+            edge = grade.total_value - totals[1 - i] if len(totals) == 2 else None
+            _render_side(grade, team_logos, value_edge=edge)
 
     fig = go.Figure(go.Bar(
         x=[g.team for g in grades.values()],
@@ -436,7 +485,13 @@ def trade_grader_tab():
 
 
 def main():
-    st.title("NHL Draft Value & Trade Grading")
+    st.markdown(
+        '<div class="hero-header"><h1>NHL Draft Value & Trade Grader</h1>'
+        "<p>A composite player value model, a draft outcome model, and a trade grader "
+        "built from public data - with every number traceable to a documented method "
+        "and confidence level.</p></div>",
+        unsafe_allow_html=True,
+    )
     tab1, tab2 = st.tabs(["Draft Explorer", "Trade Grader"])
     with tab1:
         draft_explorer_tab()
