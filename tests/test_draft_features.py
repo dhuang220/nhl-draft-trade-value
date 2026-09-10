@@ -64,26 +64,24 @@ def test_position_group_is_goalie_only_for_g_others_are_skater():
     assert out.loc[2, "position_group"] == "G"
 
 
-def test_merge_draft_sources_keeps_2000_to_2020_kaggle_rows_and_all_recent_rows():
+def test_merge_draft_sources_keeps_2000_to_2022_kaggle_rows_and_all_recent_rows():
     kaggle = pd.DataFrame([_row(year=y) for y in [1999, 2000, 2020, 2021, 2022]])
     recent = pd.DataFrame([_row(year=y) for y in [2023, 2024]])
 
     out = merge_draft_sources(kaggle, recent)
 
-    assert sorted(out["year"]) == [2000, 2020, 2023, 2024]
+    assert sorted(out["year"]) == [2000, 2020, 2021, 2022, 2023, 2024]
 
 
-def test_merge_draft_sources_excludes_2021_and_2022_from_both_sides():
-    # 2021-2022 stay out of the dashboard's dataset either way - the Kaggle file has them,
-    # but a caller could in principle also pass recent rows tagged with those years, and
-    # they should still be dropped rather than silently included via the Kaggle branch.
+def test_merge_draft_sources_ignores_pre_2023_recent_rows():
+    # A caller could in principle pass recent rows tagged with a year the Kaggle side
+    # already covers - those should still be dropped rather than double-counted.
     kaggle = pd.DataFrame([_row(year=y) for y in [2021, 2022]])
-    recent = pd.DataFrame([_row(year=y) for y in [2023]])
+    recent = pd.DataFrame([_row(year=y) for y in [2022, 2023]])
 
     out = merge_draft_sources(kaggle, recent)
 
-    assert 2021 not in out["year"].values
-    assert 2022 not in out["year"].values
+    assert sorted(out["year"]) == [2021, 2022, 2023]
 
 
 def test_build_feature_matrix_one_hot_encodes_position_group_with_drop_first():
