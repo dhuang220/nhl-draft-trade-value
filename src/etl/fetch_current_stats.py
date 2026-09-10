@@ -164,6 +164,21 @@ def fetch_player_season_stats(player_name: str, season_id: int) -> dict:
     return _build_stats(player_id, landing, season_id, matches)
 
 
+def fetch_player_nhl_season_ids(player_name: str) -> list[int]:
+    """Every regular-season NHL season_id (YYYYZZZZ) this player has a seasonTotals row for,
+    oldest first - lets a caller enumerate exactly which seasons to pull via
+    fetch_player_season_stats instead of guessing. Raises PlayerNotFoundError if the name
+    doesn't resolve; an empty list (not an error) just means no NHL games played yet."""
+    player_id = search_player_id(player_name)
+    landing = _get_json(LANDING_URL.format(player_id=player_id))
+    season_rows = landing.get("seasonTotals") or []
+    season_ids = {
+        s["season"] for s in season_rows
+        if s.get("leagueAbbrev") == "NHL" and s.get("gameTypeId") == 2
+    }
+    return sorted(season_ids)
+
+
 def fetch_team_logos() -> dict[str, str]:
     """Full team name -> logo URL, for every current NHL team. Historical/defunct team names
     (e.g. 'Quebec Nordiques') simply won't be in this dict - callers should treat a missing

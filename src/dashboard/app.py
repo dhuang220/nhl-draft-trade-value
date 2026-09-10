@@ -23,7 +23,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from src.etl.fetch_current_stats import fetch_all_current_players, fetch_team_logos
-from src.features.draft_features import clean_draft_data
+from src.features.draft_features import clean_draft_data, merge_draft_sources
 from src.features.name_matching import build_last_name_index, is_same_player
 from src.trade.trade_grader import HypotheticalPick, TradeGrader, TradeSideGrade
 
@@ -35,9 +35,13 @@ st.set_page_config(page_title="NHL Draft Value & Trade Grader", layout="wide")
 
 @st.cache_data
 def load_draft_data() -> pd.DataFrame:
-    raw = pd.read_csv(RAW_DIR / "draft_history_raw.csv")
-    raw = raw[(raw["year"] >= 2000) & (raw["year"] <= 2020)]
-    return clean_draft_data(raw)
+    kaggle = pd.read_csv(RAW_DIR / "draft_history_raw.csv")
+    # 2023+ classes have no Kaggle equivalent yet - recent_draft_data.csv is fetched live from
+    # the NHL API instead (see fetch_recent_draft_data.py); its point_shares is our value
+    # model's predicted career value, not the real stat, since these players are too recent
+    # for one to exist.
+    recent = pd.read_csv(PROCESSED_DIR / "recent_draft_data.csv")
+    return clean_draft_data(merge_draft_sources(kaggle, recent))
 
 
 @st.cache_resource

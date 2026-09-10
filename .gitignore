@@ -13,3 +13,4 @@ data/processed/*
 *.db
 .DS_Store
 .streamlit/secrets.toml
+.claude/

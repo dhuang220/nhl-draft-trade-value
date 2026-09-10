@@ -18,6 +18,16 @@ MATURE_CUTOFF_YEAR = 2012  # 10+ NHL seasons elapsed as of this dataset's ~2022 
 FEATURE_COLUMNS = ["overall_pick", "age", "position_group"]
 
 
+def merge_draft_sources(kaggle_df: pd.DataFrame, recent_df: pd.DataFrame) -> pd.DataFrame:
+    """Union the Kaggle-sourced 2000-2020 rows with the NHL-API-sourced 2023+ rows
+    (recent_df's point_shares is our value model's predicted career value, not the real
+    stat - see fetch_recent_draft_data.py). 2021-2022 are excluded from both, unchanged
+    from the dashboard's prior 2000-2020-only behavior - not touched by this task."""
+    kaggle = kaggle_df[(kaggle_df["year"] >= 2000) & (kaggle_df["year"] <= 2020)]
+    recent = recent_df[recent_df["year"] >= 2023]
+    return pd.concat([kaggle, recent], ignore_index=True)
+
+
 def clean_draft_data(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
     out["games_played"] = out["games_played"].fillna(0)
