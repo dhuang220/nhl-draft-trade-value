@@ -186,7 +186,7 @@ def draft_explorer_tab():
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
         margin=dict(t=60),
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
     team_logos = load_team_logos()
     page_df = page_df.copy()
@@ -208,7 +208,7 @@ def draft_explorer_tab():
     table = page_df[table_cols].rename(columns=rename_map)
     round_cols = {"Pace (PS/82GP)": 1, **({"Projected career PS": 1} if any_active_on_page else {})}
     st.dataframe(
-        table.round(round_cols), use_container_width=True, hide_index=True,
+        table.round(round_cols), width='stretch', hide_index=True,
         column_config={"Team": st.column_config.ImageColumn("Team", width="small")},
     )
     if any_active_on_page:
@@ -268,7 +268,7 @@ def _render_side(grade: TradeSideGrade, team_logos: dict[str, str]):
         ]
         df = pd.DataFrame(rows)
         st.dataframe(
-            df, use_container_width=True, hide_index=True,
+            df, width='stretch', hide_index=True,
             column_config={"Photo": st.column_config.ImageColumn("Photo", width="small")},
         )
         if grade.unvalued_assets:
@@ -293,7 +293,7 @@ def _render_grade_comparison(grades: dict[str, TradeSideGrade]):
     fig.update_layout(
         title="Total value by side", yaxis_title="Total graded value", template="plotly_white", margin=dict(t=60)
     )
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def _trade_label(trade_id: int, rows: pd.DataFrame) -> str:
@@ -316,7 +316,7 @@ def historical_trade_mode():
 
     trade_rows = season_trades[season_trades["trade_id"] == chosen_id]
     with st.expander("Raw trade rows"):
-        st.dataframe(trade_rows[["side", "acquiring_team", "type", "subtype", "raw"]], use_container_width=True, hide_index=True)
+        st.dataframe(trade_rows[["side", "acquiring_team", "type", "subtype", "raw"]], width='stretch', hide_index=True)
 
     grades = grader.grade_historical_trade(trade_rows)
     _render_grade_comparison(grades)
