@@ -3,21 +3,12 @@
 Every asset is valued through one of four paths, in order of confidence:
 1. Season-matched player value - the trade happened in 2016-17, so we have the
    real composite value model output for that player that season, computed
-   locally with no network call. High confidence. NOTE: unlike paths 2 and 3,
-   this is a single-SEASON total, not a career projection (the precomputed
-   table has no draft slot to project from without a fragile extra join) - a
-   known, documented scale inconsistency with the rest of this file.
+   locally with no network call. High confidence.
 2. Season-specific live value - any other historical trade, or a hypothetical/
    future one. That player's actual stats for the relevant season (or their
    current season, for a hypothetical trade) are pulled from the NHL API and
-   run through the same trained value model, then PROJECTED to a career total
-   using the same games-played-by-draft-slot curve Draft Explorer uses for its
-   pace projections - matching the timescale of a pick's expected career value
-   (value_pick), rather than comparing one season of a player against an
-   entire career of draft-slot expectation. Medium confidence (missing
-   possession/xG inputs are imputed with the training median; undrafted
-   players get whatever the curve's lowest-pick estimate is, which likely
-   understates them).
+   run through the same trained value model. Medium confidence (missing
+   possession/xG inputs are imputed with the training median).
 3. Career draft-value fallback - the season-specific lookup found no NHL
    record for that player in that season (too old for the league's digitized
    records, a name that doesn't resolve, etc.). Falls back to the player's
@@ -25,6 +16,26 @@ Every asset is valued through one of four paths, in order of confidence:
    player as "their whole career," not "how good they were at the moment of
    this specific trade" - a real, documented simplification of last resort.
 4. Unmatched - not found anywhere.
+
+Paths 1 and 2 both PROJECT that season's rate over the player's REMAINING
+career (estimate_remaining_games_from_age), not just that one season - a
+pick's value (value_pick) is an expected CAREER total, and comparing that
+directly against a single season made even a late-round pick's career
+expectation look close to one season of an elite player. The remaining-career
+estimate is age-based rather than drawn from games_played_curve (the
+draft-slot population average) - that average is dragged down by early-bust
+picks who never had a real NHL career, so it badly understates a proven
+veteran's real remaining runway once we already have their actual performance
+data (see estimate_remaining_games_from_age's docstring).
+
+Known remaining limitation: this treats every player as if they'll keep
+playing at their current team/level for their whole projected remaining
+career. It doesn't distinguish a long-term asset from a rental (a pending
+free agent acquired for the season, who may only play a few months for the
+acquiring team before leaving) - Martin Hanzal in the 2017 trade this project
+uses for validation is exactly this case, and this model currently has no way
+to tell the two apart without contract/UFA-status data this project doesn't
+have.
 
 A bare cash/future-considerations asset with no dollar amount also lands here.
 Unvalued assets are reported separately rather than silently treated as zero -
@@ -71,6 +82,27 @@ def estimate_pick_slot_from_standing(pick_round: int, league_rank: int) -> int:
     """
     estimated = (pick_round - 1) * 32 + (33 - league_rank)
     return max(estimated, 1)
+
+
+ASSUMED_RETIREMENT_AGE = 37
+ASSUMED_GAMES_PER_SEASON = 70  # a full 82-game season, discounted a bit for typical injury/load
+
+
+def estimate_remaining_games_from_age(age: float) -> float:
+    """How many more NHL games a player is likely to play, from age alone - deliberately NOT
+    based on games_played_curve (the draft-slot population average). That average is heavily
+    dragged down by early-bust picks who never had a real NHL career; once we already have a
+    player's actual current performance (which is exactly the situation every caller of this
+    function is in - an established player, not an unproven prospect), that population
+    average badly UNDERSTATES their real remaining runway. Concretely: an elite, healthy
+    29-year-old already has close to the population's average TOTAL career games played, which
+    would wrongly say his career is nearly over - the average includes players whose careers
+    ended early for reasons that don't apply to someone still performing at a high level today.
+    A flat assumed retirement age, independent of draft slot, is simpler and more defensible
+    for a player already proven to be a real NHLer.
+    """
+    remaining_seasons = max(ASSUMED_RETIREMENT_AGE - age, 0)
+    return remaining_seasons * ASSUMED_GAMES_PER_SEASON
 
 
 @dataclass
@@ -135,10 +167,6 @@ class TradeGrader:
 
         self._pick_curve = joblib.load(PROCESSED_DIR / "pick_value_curve.joblib")
         self._value_model = joblib.load(PROCESSED_DIR / "value_model.joblib")
-        # Same curve Draft Explorer uses to turn a still-active prospect's pace into a
-        # career-scale projection - reused here so a live/season player value is on the
-        # same career-length scale as a pick's expected value (see _value_from_stats).
-        self._games_played_curve = joblib.load(PROCESSED_DIR / "games_played_curve.joblib")
         self._feature_medians = self._season_values_feature_medians()
 
         draft_by_year = draft[draft["year"].between(2000, 2020)]
@@ -165,9 +193,16 @@ class TradeGrader:
 
     def value_player_2016_17(self, name: str) -> AssetValue:
         match = self._season_values[self._season_values["full_name"] == name]
-        if not match.empty:
-            return AssetValue(name, float(match.iloc[0]["predicted_value_total"]), "high", "2016-17 value model")
-        return self.value_player_career_fallback(name)
+        if match.empty:
+            return self.value_player_career_fallback(name)
+
+        row = match.iloc[0]
+        # Same remaining-career projection _value_from_stats applies to the live paths -
+        # this table already has that season's rate implicit in predicted_value_total/GP,
+        # so no need to re-run the value model, just reuse the rate and project it forward.
+        rate = row["predicted_value_total"] / row["GP"] if row["GP"] else 0.0
+        remaining_games = estimate_remaining_games_from_age(row["age"])
+        return AssetValue(name, float(rate * remaining_games), "high", "2016-17 value model (career-projected)")
 
     def value_player_career_fallback(self, name: str) -> AssetValue:
         if name in self._draft_career_values.index:
@@ -192,16 +227,14 @@ class TradeGrader:
         X = pd.DataFrame([row])[FEATURE_COLUMNS]
         predicted_rate = self._value_model.predict(X)[0]
 
-        # Project this one season's rate over a realistic FULL career, rather than
-        # returning a single-season total - a pick's value (from value_pick) is already
-        # an expected CAREER total, and comparing a season number against a career number
-        # would silently make picks look weak against even an average current player
-        # (one great season otherwise reads as "worth more than a typical whole career").
-        # Undrafted players (draft_overall=300, the sentinel used throughout this project)
-        # get whatever the curve's lowest-pick estimate is, which likely understates them -
-        # a real limitation of using draft slot as the only length-of-career predictor here.
-        benchmark_games = self._games_played_curve.predict([stats["draft_overall"]])[0]
-        career_value = float(predicted_rate * benchmark_games)
+        # Project this one season's rate over the REMAINING games in this player's career
+        # (age-based, see estimate_remaining_games_from_age) rather than the season total -
+        # a pick's value (from value_pick) is an expected CAREER total starting from
+        # nothing, so the fair comparison is "how much value is still ahead of this
+        # player," not one season of it. Without this, a 30-year-old rental's current rate
+        # read as a single season looks artificially close to a whole pick's career value.
+        remaining_games = estimate_remaining_games_from_age(stats["age"])
+        career_value = float(predicted_rate * remaining_games)
 
         return AssetValue(name, career_value, "medium", f"{source} (career-projected)", image_url=stats.get("headshot"))
 

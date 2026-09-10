@@ -84,7 +84,7 @@ def train_and_evaluate():
     joblib.dump(final_model, MODEL_PATH)
 
     predicted_rate = final_model.predict(X)
-    values = clean[["First Name", "Last Name", "Position", "GP", "Salary", "PS"]].copy()
+    values = clean[["First Name", "Last Name", "Position", "GP", "Salary", "PS", "draft_overall", "age"]].copy()
     values["position_group"] = clean["position_group"]
     values["predicted_value_total"] = predicted_rate * gp
     values.to_csv(PLAYER_VALUES_PATH, index=False)
