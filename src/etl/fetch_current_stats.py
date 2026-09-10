@@ -202,12 +202,34 @@ def _fetch_standings() -> list[dict]:
     return _get_json(STANDINGS_URL)["standings"]
 
 
+# Historical name -> current name, for franchises that relocated/rebranded within this
+# project's 2000-2026 data window (draft/trade records correctly use the name a team had
+# at the time, which won't match fetch_team_logos()'s current-team-only dict otherwise).
+# Older relocations (e.g. Quebec Nordiques -> Colorado Avalanche, 1995) predate this
+# project's data and aren't covered - the graceful "no logo" fallback still applies there.
+_RELOCATED_TEAM_ALIASES = {
+    "Phoenix Coyotes": "Utah Mammoth",
+    "Arizona Coyotes": "Utah Mammoth",
+    "Atlanta Thrashers": "Winnipeg Jets",
+}
+
+
+def _add_relocated_team_aliases(logos: dict[str, str]) -> dict[str, str]:
+    logos = dict(logos)
+    for old_name, current_name in _RELOCATED_TEAM_ALIASES.items():
+        if current_name in logos:
+            logos[old_name] = logos[current_name]
+    return logos
+
+
 def fetch_team_logos() -> dict[str, str]:
-    """Full team name -> logo URL, for every current NHL team. Historical/defunct team names
+    """Full team name -> logo URL, for every current NHL team, plus known historical
+    aliases (see _RELOCATED_TEAM_ALIASES). Older/defunct team names not in that alias map
     (e.g. 'Quebec Nordiques') simply won't be in this dict - callers should treat a missing
     key as "no logo available" rather than an error, the same graceful-degradation pattern
     used everywhere else in this project."""
-    return {team["teamName"]["default"]: team["teamLogo"] for team in _fetch_standings()}
+    logos = {team["teamName"]["default"]: team["teamLogo"] for team in _fetch_standings()}
+    return _add_relocated_team_aliases(logos)
 
 
 def fetch_team_standings() -> dict[str, int]:

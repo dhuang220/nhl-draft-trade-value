@@ -1,4 +1,4 @@
-from src.etl.fetch_current_stats import _disambiguate_duplicate_names
+from src.etl.fetch_current_stats import _add_relocated_team_aliases, _disambiguate_duplicate_names
 
 
 def _player(first: str, last: str, position: str) -> dict:
@@ -21,3 +21,18 @@ def test_only_the_colliding_names_are_suffixed():
     assert _disambiguate_duplicate_names(players) == [
         "Elias Pettersson (C)", "Elias Pettersson (D)", "Cale Makar",
     ]
+
+
+def test_relocated_team_aliases_resolve_to_current_logo():
+    logos = {"Utah Mammoth": "utah.svg", "Winnipeg Jets": "wpg.svg"}
+    out = _add_relocated_team_aliases(logos)
+    assert out["Arizona Coyotes"] == "utah.svg"
+    assert out["Phoenix Coyotes"] == "utah.svg"
+    assert out["Atlanta Thrashers"] == "wpg.svg"
+    assert out["Utah Mammoth"] == "utah.svg"  # unrelated current entries untouched
+
+
+def test_relocated_team_alias_skipped_if_current_team_missing():
+    # Shouldn't crash or add a None/garbage entry if the current name isn't in the input.
+    out = _add_relocated_team_aliases({})
+    assert "Arizona Coyotes" not in out
