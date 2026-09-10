@@ -43,6 +43,11 @@ class AssetValue:
     value: float | None
     confidence: str  # "high" | "medium" | "low" | "none"
     source: str
+    # Only ever set for a live player (value_player_live already has the headshot
+    # in hand from the same API response, so it's free) - historical/fallback
+    # valuations have no photo source and leave this None, same graceful-
+    # degradation pattern as everything else here.
+    image_url: str | None = None
 
 
 @dataclass
@@ -139,7 +144,10 @@ class TradeGrader:
 
         X = pd.DataFrame([row])[FEATURE_COLUMNS]
         predicted_rate = self._value_model.predict(X)[0]
-        return AssetValue(name, float(predicted_rate * stats["GP"]), "medium", "live NHL API + value model")
+        return AssetValue(
+            name, float(predicted_rate * stats["GP"]), "medium", "live NHL API + value model",
+            image_url=stats.get("headshot"),
+        )
 
     # --- Pick valuation -------------------------------------------------------
 

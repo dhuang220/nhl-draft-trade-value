@@ -21,7 +21,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from src.etl.fetch_current_stats import fetch_all_current_players
+from src.etl.fetch_current_stats import fetch_all_current_players, fetch_team_logos
 from src.features.draft_features import clean_draft_data
 from src.trade.trade_grader import HypotheticalPick, TradeGrader, TradeSideGrade
 
@@ -67,6 +67,11 @@ def load_trade_grader() -> TradeGrader:
 @st.cache_data(ttl=3600)
 def load_current_player_names() -> list[str]:
     return fetch_all_current_players()
+
+
+@st.cache_data(ttl=3600)
+def load_team_logos() -> dict[str, str]:
+    return fetch_team_logos()
 
 
 def draft_explorer_tab():
@@ -157,9 +162,13 @@ def draft_explorer_tab():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    table_cols = ["overall_pick", "player", "position", "point_shares", "pace"]
+    team_logos = load_team_logos()
+    page_df = page_df.copy()
+    page_df["team_logo"] = page_df["team"].map(team_logos)
+
+    table_cols = ["team_logo", "overall_pick", "player", "position", "point_shares", "pace"]
     rename_map = {
-        "overall_pick": "Pick", "player": "Player", "position": "Pos",
+        "team_logo": "Team", "overall_pick": "Pick", "player": "Player", "position": "Pos",
         "point_shares": "Career PS so far", "pace": "Pace (PS/82GP)",
     }
     if not is_mature:
@@ -170,7 +179,10 @@ def draft_explorer_tab():
 
     table = page_df[table_cols].rename(columns=rename_map)
     round_cols = {"Pace (PS/82GP)": 1, **({"Projected career PS": 1} if not is_mature else {})}
-    st.dataframe(table.round(round_cols), use_container_width=True, hide_index=True)
+    st.dataframe(
+        table.round(round_cols), use_container_width=True, hide_index=True,
+        column_config={"Team": st.column_config.ImageColumn("Team", width="small")},
+    )
     if not is_mature:
         st.caption(
             "The purple diamonds (and 'Projected career PS' column) show what each player's career "
@@ -213,26 +225,36 @@ def draft_explorer_tab():
         )
 
 
-def _render_side(grade: TradeSideGrade):
-    st.markdown(f"**{grade.team}** - total value: `{grade.total_value:+.2f}`")
-    rows = [
-        {"Asset": a.label, "Value": a.value, "Confidence": a.confidence, "Source": a.source}
-        for a in grade.assets
-    ]
-    df = pd.DataFrame(rows)
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    if grade.unvalued_assets:
-        st.warning(
-            f"{len(grade.unvalued_assets)} asset(s) came back unvalued (confidence \"none\"): "
-            + ", ".join(a.label for a in grade.unvalued_assets)
+def _render_side(grade: TradeSideGrade, team_logos: dict[str, str]):
+    with st.container(border=True):
+        header_col, metric_col = st.columns([1, 3])
+        logo_url = team_logos.get(grade.team)
+        if logo_url:
+            header_col.image(logo_url, width=56)
+        metric_col.metric(grade.team, f"{grade.total_value:+.2f}")
+
+        rows = [
+            {"Photo": a.image_url, "Asset": a.label, "Value": a.value, "Confidence": a.confidence, "Source": a.source}
+            for a in grade.assets
+        ]
+        df = pd.DataFrame(rows)
+        st.dataframe(
+            df, use_container_width=True, hide_index=True,
+            column_config={"Photo": st.column_config.ImageColumn("Photo", width="small")},
         )
+        if grade.unvalued_assets:
+            st.warning(
+                f"{len(grade.unvalued_assets)} asset(s) came back unvalued (confidence \"none\"): "
+                + ", ".join(a.label for a in grade.unvalued_assets)
+            )
 
 
 def _render_grade_comparison(grades: dict[str, TradeSideGrade]):
+    team_logos = load_team_logos()
     cols = st.columns(len(grades))
     for col, (_, grade) in zip(cols, grades.items()):
         with col:
-            _render_side(grade)
+            _render_side(grade, team_logos)
 
     fig = go.Figure(go.Bar(
         x=[g.team for g in grades.values()],

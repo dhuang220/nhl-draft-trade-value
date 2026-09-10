@@ -80,6 +80,7 @@ def fetch_current_player_stats(player_name: str) -> dict:
 
     stats = {
         "player_id": player_id,
+        "headshot": landing.get("headshot"),
         "age": age,
         "GP": reg_season.get("gamesPlayed"),
         "G": reg_season.get("goals"),
@@ -132,6 +133,15 @@ def _get_json(url: str, retries: int = 3, delay: float = 0.5) -> dict:
         resp.raise_for_status()
         return resp.json()
     resp.raise_for_status()
+
+
+def fetch_team_logos() -> dict[str, str]:
+    """Full team name -> logo URL, for every current NHL team. Historical/defunct team names
+    (e.g. 'Quebec Nordiques') simply won't be in this dict - callers should treat a missing
+    key as "no logo available" rather than an error, the same graceful-degradation pattern
+    used everywhere else in this project."""
+    standings = _get_json(STANDINGS_URL)["standings"]
+    return {team["teamName"]["default"]: team["teamLogo"] for team in standings}
 
 
 def fetch_all_current_players() -> list[str]:
