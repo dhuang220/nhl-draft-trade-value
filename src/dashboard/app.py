@@ -24,6 +24,7 @@ import streamlit as st
 
 from src.etl.fetch_current_stats import fetch_all_current_players, fetch_team_logos
 from src.features.draft_features import clean_draft_data
+from src.features.name_matching import build_last_name_index, is_same_player
 from src.trade.trade_grader import HypotheticalPick, TradeGrader, TradeSideGrade
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
@@ -79,7 +80,11 @@ def draft_explorer_tab():
     draft = load_draft_data()
     curve = load_pick_curve()
     games_curve = load_games_played_curve()
-    current_players = set(load_current_player_names())
+    # A plain exact-match against current roster names misses real active players -
+    # the draft dataset spells names differently than the NHL's live API for accented
+    # letters ("Lafreniere" vs "Lafrenière") and nicknames ("Mitchell" vs "Mitch"
+    # Marner) - see name_matching.py.
+    current_player_index = build_last_name_index(load_current_player_names())
 
     year = st.selectbox("Draft year", sorted(draft["year"].unique(), reverse=True))
     class_df = draft[draft["year"] == year].sort_values("overall_pick").copy()
@@ -100,7 +105,7 @@ def draft_explorer_tab():
     # stuck, or someone who retired early) whose totals are already final. Checked
     # against today's actual rosters rather than the class-level year cutoff used for
     # training-label safety (is_mature above, which stays a class-level concept).
-    class_df["is_active_now"] = class_df["player"].isin(current_players)
+    class_df["is_active_now"] = class_df["player"].apply(lambda p: is_same_player(p, current_player_index))
 
     # A rolling mean over THIS class's RETIRED/inactive outcomes only - mixing in
     # still-active players' understated totals would drag the trend down artificially.
