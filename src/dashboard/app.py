@@ -308,6 +308,13 @@ def draft_explorer_tab():
         )
 
 
+def _is_player_breakdown(breakdown: dict) -> bool:
+    # Player breakdowns are keyed by stat name and always include the model's intercept
+    # term; pick breakdowns are keyed by curve/discount step names instead - this is the
+    # cheapest way to tell the two apart without adding a type field to AssetValue.
+    return "Baseline (model intercept)" in breakdown
+
+
 def _render_asset_breakdown(asset):
     items = sorted(asset.breakdown.items(), key=lambda kv: kv[1])
     labels, values = zip(*items)
@@ -320,6 +327,32 @@ def _render_asset_breakdown(asset):
         title=f"Why {asset.label} was valued at {asset.value:+.2f}",
         xaxis_title="Contribution to value", template="plotly_white",
         margin=dict(t=50, l=10, r=40, b=10), height=max(220, 32 * len(labels)),
+    )
+    st.plotly_chart(fig, width='stretch')
+
+
+def _render_player_comparison_chart(player_assets: list):
+    if len(player_assets) < 2:
+        return
+
+    # One shared row order across every player, so the same stat lines up on the same row
+    # for direct comparison - ranked by whichever player differs on it most, so the biggest
+    # differentiators surface at the top instead of a fixed, possibly-irrelevant order.
+    all_features = {f for a in player_assets for f in a.breakdown}
+    feature_order = sorted(all_features, key=lambda f: -max(abs(a.breakdown.get(f, 0.0)) for a in player_assets))
+
+    colors = ["#4e79a7", "#f28e2b", "#59a14f", "#e15759", "#b07aa1", "#76b7b2"]
+    fig = go.Figure()
+    for i, asset in enumerate(player_assets):
+        fig.add_trace(go.Bar(
+            name=asset.label, orientation="h", marker_color=colors[i % len(colors)],
+            x=[asset.breakdown.get(f, 0.0) for f in feature_order], y=feature_order,
+        ))
+    fig.update_layout(
+        title="Player value comparison - what's driving each player's number",
+        xaxis_title="Contribution to value", barmode="group", template="plotly_white",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        height=max(320, 28 * len(feature_order)), margin=dict(t=70),
     )
     st.plotly_chart(fig, width='stretch')
 
@@ -350,13 +383,6 @@ def _render_side(grade: TradeSideGrade, team_logos: dict[str, str], value_edge: 
                 + ", ".join(a.label for a in grade.unvalued_assets)
             )
 
-        # Progressive disclosure, not shown by default - a trade with several assets
-        # would otherwise show a wall of charts nobody asked to see yet.
-        for asset in grade.assets:
-            if asset.breakdown:
-                with st.expander(f"Why {asset.label}: {asset.value:+.2f}"):
-                    _render_asset_breakdown(asset)
-
 
 def _render_grade_comparison(grades: dict[str, TradeSideGrade]):
     team_logos = load_team_logos()
@@ -376,6 +402,25 @@ def _render_grade_comparison(grades: dict[str, TradeSideGrade]):
         title="Total value by side", yaxis_title="Total graded value", template="plotly_white", margin=dict(t=60)
     )
     st.plotly_chart(fig, width='stretch')
+
+    # Always visible, not tucked behind a dropdown - the whole point is to make it
+    # immediately obvious what's driving the numbers above, not something to go dig for.
+    all_assets = [a for g in grades.values() for a in g.assets]
+    player_assets = [a for a in all_assets if a.breakdown and _is_player_breakdown(a.breakdown)]
+    pick_assets = [a for a in all_assets if a.breakdown and not _is_player_breakdown(a.breakdown)]
+
+    if len(player_assets) >= 2:
+        _render_player_comparison_chart(player_assets)
+    elif len(player_assets) == 1:
+        # Nothing to compare against (e.g. a player traded purely for picks) - still show
+        # their own breakdown rather than silently dropping it.
+        _render_asset_breakdown(player_assets[0])
+    if pick_assets:
+        st.markdown("**Pick value breakdown**")
+        pick_cols = st.columns(len(pick_assets))
+        for col, asset in zip(pick_cols, pick_assets):
+            with col:
+                _render_asset_breakdown(asset)
 
 
 def _trade_label(trade_id: int, rows: pd.DataFrame) -> str:
