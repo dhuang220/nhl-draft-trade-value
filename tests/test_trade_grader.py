@@ -62,3 +62,25 @@ def test_season_specific_lookup_sums_a_mid_season_trade_across_teams(grader):
     asset = grader.value_player_season("Martin Hanzal", 20162017)
     assert asset.confidence == "medium"
     assert asset.value > 0
+
+
+def test_live_player_breakdown_sums_to_the_total_value(grader):
+    asset = grader.value_player_live("Connor McDavid")
+    assert asset.breakdown is not None
+    assert sum(asset.breakdown.values()) == pytest.approx(asset.value, abs=1e-6)
+
+
+def test_pick_breakdown_sums_to_the_total_value(grader):
+    asset = grader.value_pick(pick_year=2028, pick_round=1, pick_overall=None, is_conditional=True, trade_year=2026, team_rank=32)
+    assert asset.breakdown is not None
+    assert sum(asset.breakdown.values()) == pytest.approx(asset.value, abs=1e-6)
+    assert "Future-year discount" in asset.breakdown
+    assert "Conditional discount" in asset.breakdown
+
+
+def test_immediate_unconditional_pick_breakdown_has_no_discount_entries(grader):
+    # A pick landing this year, with no condition attached, shouldn't show discount rows
+    # that would just read as "0.00" noise.
+    asset = grader.value_pick(pick_year=2026, pick_round=1, pick_overall=15, is_conditional=False, trade_year=2026)
+    assert "Future-year discount" not in asset.breakdown
+    assert "Conditional discount" not in asset.breakdown

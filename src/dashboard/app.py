@@ -308,6 +308,22 @@ def draft_explorer_tab():
         )
 
 
+def _render_asset_breakdown(asset):
+    items = sorted(asset.breakdown.items(), key=lambda kv: kv[1])
+    labels, values = zip(*items)
+    fig = go.Figure(go.Bar(
+        x=values, y=labels, orientation="h",
+        marker_color=["#e15759" if v < 0 else "#59a14f" for v in values],
+        text=[f"{v:+.2f}" for v in values], textposition="outside",
+    ))
+    fig.update_layout(
+        title=f"Why {asset.label} was valued at {asset.value:+.2f}",
+        xaxis_title="Contribution to value", template="plotly_white",
+        margin=dict(t=50, l=10, r=40, b=10), height=max(220, 32 * len(labels)),
+    )
+    st.plotly_chart(fig, width='stretch')
+
+
 def _render_side(grade: TradeSideGrade, team_logos: dict[str, str], value_edge: float | None = None):
     with st.container(border=True):
         header_col, metric_col = st.columns([1, 3])
@@ -333,6 +349,13 @@ def _render_side(grade: TradeSideGrade, team_logos: dict[str, str], value_edge: 
                 f"{len(grade.unvalued_assets)} asset(s) came back unvalued (confidence \"none\"): "
                 + ", ".join(a.label for a in grade.unvalued_assets)
             )
+
+        # Progressive disclosure, not shown by default - a trade with several assets
+        # would otherwise show a wall of charts nobody asked to see yet.
+        for asset in grade.assets:
+            if asset.breakdown:
+                with st.expander(f"Why {asset.label}: {asset.value:+.2f}"):
+                    _render_asset_breakdown(asset)
 
 
 def _render_grade_comparison(grades: dict[str, TradeSideGrade]):

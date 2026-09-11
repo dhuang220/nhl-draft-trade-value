@@ -13,6 +13,27 @@ FEATURE_COLUMNS = [
     "draft_overall",
 ]
 
+# Human-readable labels for FEATURE_COLUMNS, for showing a player's value breakdown
+# (see trade_grader.py's _value_from_stats) rather than raw column names.
+FEATURE_LABELS = {
+    "age": "Age",
+    "GP": "Games played",
+    "G_per_gp": "Goals/game",
+    "A_per_gp": "Assists/game",
+    "PIM_per_gp": "Penalty minutes/game",
+    "iHF_per_gp": "Hits/game",
+    "iGVA_per_gp": "Giveaways/game",
+    "iTKA_per_gp": "Takeaways/game",
+    "iBLK_per_gp": "Blocked shots/game",
+    "CF_per_gp": "Shot attempts for/game",
+    "CA_per_gp": "Shot attempts against/game",
+    "xGF_per_gp": "Expected goals for/game",
+    "xGA_per_gp": "Expected goals against/game",
+    "was_drafted": "Was drafted",
+    "draft_round": "Draft round",
+    "draft_overall": "Draft position",
+}
+
 
 def _parse_birth_year(born: str) -> int:
     """'Born' is 'YY-MM-DD'. All players in this dataset were born 1965-2000,

@@ -58,7 +58,7 @@ from src.etl.fetch_current_stats import (
     fetch_player_season_stats,
     fetch_team_standings,
 )
-from src.features.value_features import FEATURE_COLUMNS, RATE_STATS
+from src.features.value_features import FEATURE_COLUMNS, FEATURE_LABELS, RATE_STATS
 
 PROCESSED_DIR = Path(__file__).resolve().parents[2] / "data" / "processed"
 RAW_DIR = Path(__file__).resolve().parents[2] / "data" / "raw"
@@ -116,6 +116,13 @@ class AssetValue:
     # valuations have no photo source and leave this None, same graceful-
     # degradation pattern as everything else here.
     image_url: str | None = None
+    # label -> contribution to `value`, in the same units, so a caller can show WHY a
+    # number came out the way it did. Set for the live/season-specific player path
+    # (exact, from the linear value model's own coefficients - see _value_from_stats)
+    # and for picks (the curve/discount steps in value_pick). Not set for the 2016-17
+    # precomputed table or the career-fallback path - neither retains the raw inputs
+    # needed to reconstruct a breakdown after the fact.
+    breakdown: dict[str, float] | None = None
 
 
 @dataclass
@@ -236,7 +243,25 @@ class TradeGrader:
         remaining_games = estimate_remaining_games_from_age(stats["age"])
         career_value = float(predicted_rate * remaining_games)
 
-        return AssetValue(name, career_value, "medium", f"{source} (career-projected)", image_url=stats.get("headshot"))
+        # Exact, not approximated: the value model is linear (StandardScaler + Ridge), so
+        # its prediction IS a sum of (coefficient x scaled feature) terms plus an intercept -
+        # this is that sum broken back out per feature, scaled by remaining_games so it adds
+        # up to career_value, to show a caller exactly which stats drove this number and by
+        # how much (a raw stat with a small coefficient can still matter if its value is
+        # unusually high, and vice versa - this is what actually happened, not a guess).
+        scaler = self._value_model.named_steps["standardscaler"]
+        ridge = self._value_model.named_steps["ridgecv"]
+        X_scaled = scaler.transform(X)[0]
+        breakdown = {
+            FEATURE_LABELS.get(feat, feat): float(coef * scaled_val * remaining_games)
+            for feat, coef, scaled_val in zip(FEATURE_COLUMNS, ridge.coef_, X_scaled)
+        }
+        breakdown["Baseline (model intercept)"] = float(ridge.intercept_ * remaining_games)
+
+        return AssetValue(
+            name, career_value, "medium", f"{source} (career-projected)",
+            image_url=stats.get("headshot"), breakdown=breakdown,
+        )
 
     def value_player_live(self, name: str) -> AssetValue:
         try:
@@ -288,12 +313,20 @@ class TradeGrader:
         base_value = float(self._pick_curve.predict([slot])[0])
 
         years_out = (pick_year - trade_year) if pd.notna(pick_year) else 0
-        discount = FUTURE_PICK_ANNUAL_DISCOUNT ** max(years_out, 0)
+        after_future_discount = base_value * (FUTURE_PICK_ANNUAL_DISCOUNT ** max(years_out, 0))
+        final_value = after_future_discount * (CONDITIONAL_PICK_DISCOUNT if is_conditional else 1.0)
+
+        # A waterfall, not a single number: each entry is the CHANGE at that step, so they
+        # sum to final_value - shows exactly how much of a pick's discount came from being
+        # far in the future vs. from being conditional, rather than one opaque multiplier.
+        breakdown = {"Base value (pick curve)": base_value}
+        if years_out > 0:
+            breakdown["Future-year discount"] = after_future_discount - base_value
         if is_conditional:
-            discount *= CONDITIONAL_PICK_DISCOUNT
+            breakdown["Conditional discount"] = final_value - after_future_discount
 
         confidence = "medium" if pd.notna(pick_overall) else "low"
-        return AssetValue(label, base_value * discount, confidence, source)
+        return AssetValue(label, final_value, confidence, source, breakdown=breakdown)
 
     # --- Trade-level grading ----------------------------------------------
 
